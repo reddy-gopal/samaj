@@ -81,19 +81,31 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
           <a
             href="#recent"
-            className="text-slate-600 hover:text-blue-600 transition-colors"
+            onClick={(e) => {
+              e.preventDefault();
+              document.getElementById("recent")?.scrollIntoView({ behavior: "smooth", block: "start" });
+            }}
+            className="text-slate-600 hover:text-blue-600 transition-colors cursor-pointer"
           >
             {t.navMyLetters}
           </a>
           <a
             href="#how-it-works"
-            className="text-slate-600 hover:text-blue-600 transition-colors"
+            onClick={(e) => {
+              e.preventDefault();
+              document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth", block: "start" });
+            }}
+            className="text-slate-600 hover:text-blue-600 transition-colors cursor-pointer"
           >
             How It Works
           </a>
           <a
             href="#safety"
-            className="text-slate-600 hover:text-blue-600 transition-colors flex items-center gap-1"
+            onClick={(e) => {
+              e.preventDefault();
+              document.getElementById("safety")?.scrollIntoView({ behavior: "smooth", block: "start" });
+            }}
+            className="text-slate-600 hover:text-blue-600 transition-colors flex items-center gap-1 cursor-pointer"
           >
             <ShieldCheck className="w-4 h-4 text-emerald-600" />
             <span>Safety Tips</span>

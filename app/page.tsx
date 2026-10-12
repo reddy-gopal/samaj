@@ -670,7 +670,7 @@ export default function SamajApp() {
 
           {/* Mobile How It Works Section */}
           <div className="pt-4 pb-2">
-            <HowItWorks onScanClick={() => setShowCameraModal(true)} />
+            <HowItWorks id="how-it-works-mobile" onScanClick={() => setShowCameraModal(true)} />
           </div>
         </div>
 

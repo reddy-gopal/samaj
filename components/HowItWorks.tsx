@@ -12,10 +12,11 @@ import {
 } from "lucide-react";
 
 interface HowItWorksProps {
+  id?: string;
   onScanClick?: () => void;
 }
 
-export const HowItWorks: React.FC<HowItWorksProps> = ({ onScanClick }) => {
+export const HowItWorks: React.FC<HowItWorksProps> = ({ id = "how-it-works", onScanClick }) => {
   const steps = [
     {
       step: "01",
@@ -88,7 +89,7 @@ export const HowItWorks: React.FC<HowItWorksProps> = ({ onScanClick }) => {
   ];
 
   return (
-    <section id="how-it-works" className="w-full scroll-mt-24 space-y-8 py-6">
+    <section id={id} className="w-full scroll-mt-24 space-y-8 py-6">
       {/* Header */}
       <div className="text-center max-w-3xl mx-auto space-y-3">
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 border border-blue-200/80 text-blue-700 text-xs font-bold shadow-2xs">
