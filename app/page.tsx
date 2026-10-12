@@ -27,6 +27,7 @@ import {
   Inbox,
   FileSearch,
 } from "lucide-react";
+import { processPdfClientSide, RenderedPdfPage } from "@/lib/pdf";
 
 export interface RealAnalysisRecord {
   id: string;
@@ -106,17 +107,30 @@ function getBadgeForResult(result: NoticeTriageResult): {
 export default function LetterWiseApp() {
   const [language, setLanguage] = useState<SupportedLanguage>("en");
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState<string>("Analyzing your letter...");
   const [triageResult, setTriageResult] = useState<NoticeTriageResult | null>(null);
   const [currentImage, setCurrentImage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showLanguageModal, setShowLanguageModal] = useState(false);
   const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
+  const [fileType, setFileType] = useState<"image" | "pdf" | null>(null);
+  const [fileName, setFileName] = useState<string | null>(null);
+  const [pdfPages, setPdfPages] = useState<RenderedPdfPage[]>([]);
+  const [currentPageIndex, setCurrentPageIndex] = useState<number>(1);
 
   // Real scan history persisted in localStorage
   const [realHistory, setRealHistory] = useState<RealAnalysisRecord[]>([]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+
+  const handlePageChange = (newPage: number) => {
+    const page = pdfPages.find((p) => p.pageNumber === newPage);
+    if (page) {
+      setCurrentPageIndex(newPage);
+      setCurrentImage(page.dataUrl);
+    }
+  };
 
   // Load real history from localStorage on initial render
   useEffect(() => {
@@ -174,37 +188,108 @@ export default function LetterWiseApp() {
   const handleFileProcess = async (file: File) => {
     setIsLoading(true);
     setErrorMessage(null);
+    setFileName(file.name);
+
+    const isPdf =
+      file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+
+    let analyzedResult: NoticeTriageResult | null = null;
+    let thumbnailToSave: string | undefined = undefined;
 
     try {
-      const { base64, mimeType } = await compressImageClientSide(file);
-      setCurrentImage(base64);
+      if (isPdf) {
+        setFileType("pdf");
+        setLoadingMessage("Reading & rendering PDF document...");
 
-      const response = await fetch("/api/explain", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          image: base64,
-          mimeType,
-          language,
-        }),
-      });
+        const processed = await processPdfClientSide(file);
+        setPdfPages(processed.pages);
+        setCurrentPageIndex(1);
 
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to analyze notice");
+        if (processed.isRawPdf) {
+          // If browser canvas was unavailable, send raw PDF
+          setLoadingMessage("Analyzing PDF with AI engine...");
+          const response = await fetch("/api/explain", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              image: processed.firstPageImage,
+              mimeType: "application/pdf",
+              language,
+              extractedText: "",
+            }),
+          });
+          const data = await response.json();
+          if (!response.ok) {
+            throw new Error(data.error || "Failed to analyze PDF document");
+          }
+          analyzedResult = data as NoticeTriageResult;
+          thumbnailToSave = undefined;
+        } else {
+          // Rendered page image available! Gemma 4 inspects it as crisp JPEG
+          setCurrentImage(processed.firstPageImage);
+          setLoadingMessage("Gemma 4 is analyzing your letter...");
+
+          const response = await fetch("/api/explain", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              image: processed.firstPageImage,
+              mimeType: "image/jpeg",
+              language,
+              extractedText: processed.extractedText,
+            }),
+          });
+
+          const data = await response.json();
+          if (!response.ok) {
+            throw new Error(data.error || "Failed to analyze PDF document");
+          }
+          analyzedResult = data as NoticeTriageResult;
+          thumbnailToSave = processed.firstPageImage;
+        }
+      } else {
+        setFileType("image");
+        setPdfPages([]);
+        setCurrentPageIndex(1);
+        setLoadingMessage("Compressing & preparing image...");
+
+        const { base64, mimeType } = await compressImageClientSide(file);
+        setCurrentImage(base64);
+
+        setLoadingMessage("Gemma 4 is analyzing your letter...");
+        const response = await fetch("/api/explain", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            image: base64,
+            mimeType,
+            language,
+          }),
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || "Failed to analyze notice");
+        }
+
+        analyzedResult = data as NoticeTriageResult;
+        thumbnailToSave = base64;
       }
 
-      const analyzedResult = data as NoticeTriageResult;
-      setTriageResult(analyzedResult);
-      saveRealAnalysis(analyzedResult, base64);
-      setMobileDetailOpen(true);
+      if (analyzedResult) {
+        setTriageResult(analyzedResult);
+        saveRealAnalysis(analyzedResult, thumbnailToSave);
+        setMobileDetailOpen(true);
+      }
 
+      // Scroll to inspection card
       document.getElementById("analysis-section")?.scrollIntoView({ behavior: "smooth" });
     } catch (err: unknown) {
       console.error("Triage error:", err);
       setErrorMessage(err instanceof Error ? err.message : "Failed to analyze notice");
     } finally {
       setIsLoading(false);
+      setLoadingMessage("Analyzing your letter...");
     }
   };
 
@@ -212,6 +297,10 @@ export default function LetterWiseApp() {
     setErrorMessage(null);
     setTriageResult(record.result);
     setCurrentImage(record.imageThumbnail || null);
+    setFileName(record.title);
+    setFileType(null);
+    setPdfPages([]);
+    setCurrentPageIndex(1);
     setMobileDetailOpen(true);
     document.getElementById("analysis-section")?.scrollIntoView({ behavior: "smooth" });
   };
@@ -283,7 +372,7 @@ export default function LetterWiseApp() {
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp"
+        accept="image/jpeg,image/png,image/webp,application/pdf,.pdf"
         className="hidden"
         onChange={(e) => e.target.files?.[0] && handleFileProcess(e.target.files[0])}
       />
@@ -321,7 +410,7 @@ export default function LetterWiseApp() {
           <div className="bg-white rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-slate-100 space-y-4">
             <RefreshCw className="w-12 h-12 text-blue-600 animate-spin mx-auto" />
             <h3 className="text-lg font-black text-slate-900">
-              Gemma 4 is analyzing your letter...
+              {loadingMessage}
             </h3>
             <p className="text-xs text-slate-500 font-medium leading-relaxed">
               Reading official text, verifying authenticity, and extracting immediate actions.
@@ -607,10 +696,30 @@ export default function LetterWiseApp() {
                 onReset={() => {
                   setTriageResult(null);
                   setCurrentImage(null);
+                  setFileName(null);
+                  setFileType(null);
+                  setPdfPages([]);
+                  setCurrentPageIndex(1);
                   setMobileDetailOpen(false);
                 }}
                 imageUrl={currentImage || undefined}
                 onLanguageChange={(newLang) => setLanguage(newLang)}
+                documentMeta={
+                  fileType === "pdf"
+                    ? {
+                        fileName: fileName || "Document.pdf",
+                        fileType: "pdf",
+                        currentPage: currentPageIndex,
+                        totalPages: pdfPages.length > 0 ? pdfPages.length : 1,
+                        onPageChange: handlePageChange,
+                      }
+                    : fileName
+                    ? {
+                        fileName: fileName,
+                        fileType: "image",
+                      }
+                    : undefined
+                }
               />
             </div>
           </div>
@@ -762,9 +871,29 @@ export default function LetterWiseApp() {
                 onReset={() => {
                   setTriageResult(null);
                   setCurrentImage(null);
+                  setFileName(null);
+                  setFileType(null);
+                  setPdfPages([]);
+                  setCurrentPageIndex(1);
                 }}
                 imageUrl={currentImage || undefined}
                 onLanguageChange={(newLang) => setLanguage(newLang)}
+                documentMeta={
+                  fileType === "pdf"
+                    ? {
+                        fileName: fileName || "Document.pdf",
+                        fileType: "pdf",
+                        currentPage: currentPageIndex,
+                        totalPages: pdfPages.length > 0 ? pdfPages.length : 1,
+                        onPageChange: handlePageChange,
+                      }
+                    : fileName
+                    ? {
+                        fileName: fileName,
+                        fileType: "image",
+                      }
+                    : undefined
+                }
               />
             ) : (
               <div className="w-full p-12 rounded-3xl bg-white border-2 border-dashed border-slate-200 text-center space-y-4 shadow-sm">
