@@ -1,14 +1,14 @@
-# Notice Explainer 🛡️📄
-> **Understand official notices safely in Telugu, Hindi, or English.**  
-> *Built for MLH Hacktoberfest Hackathon.*
+# LetterWise 🛡️📄
+> **Understand official notices, bills, and legal letters safely in plain Telugu, Hindi, or English.**  
+> *Built for MLH Hacktoberfest Hackathon 2026.*
 
 ---
 
 ## 🌟 Project Overview
 
-**Notice Explainer** is a mobile-first, privacy-respecting web application designed to help elderly citizens, first-generation English readers, and small business owners in India navigate confusing and threatening official-looking notices. 
+**LetterWise** (formerly Notice Explainer) is an accessible, privacy-first web application designed to help elderly citizens, first-generation English readers, and small business owners in India navigate confusing, bureaucratic, or extortionate official-looking notices. 
 
-Whether it is an electricity disconnection warning, bank KYC deadline, tax demand, court summons, or insurance lapse letter, **Notice Explainer provides immediate safety triage—not legal advice.** Users photograph physical notices and receive instant, plain-language answers in their native language (Telugu, Hindi, or English).
+Whether it is an electricity disconnection warning, bank KYC deadline, tax demand, court summons, or insurance lapse notice, **LetterWise provides immediate safety triage—not legal advice.** Users photograph physical letters or upload PDFs and receive instant, plain-language answers in their native language (Telugu, Hindi, or English).
 
 ---
 
