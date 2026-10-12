@@ -1,0 +1,277 @@
+import { DocumentType, ImmediateAction, SupportedLanguage } from "./schema";
+
+export interface LanguageOption {
+  code: SupportedLanguage;
+  name: string;
+  nativeName: string;
+  script: string;
+  speechLocale: string;
+}
+
+export const SUPPORTED_LANGUAGES: LanguageOption[] = [
+  {
+    code: "te",
+    name: "Telugu",
+    nativeName: "తెలుగు",
+    script: "Telugu",
+    speechLocale: "te-IN",
+  },
+  {
+    code: "hi",
+    name: "Hindi",
+    nativeName: "हिन्दी",
+    script: "Devanagari",
+    speechLocale: "hi-IN",
+  },
+  {
+    code: "en",
+    name: "English",
+    nativeName: "English",
+    script: "Latin",
+    speechLocale: "en-IN",
+  },
+];
+
+export interface UiTranslations {
+  appName: string;
+  appSubtitle: string;
+  heroTagline: string;
+  cameraButton: string;
+  uploadButton: string;
+  sampleButton: string;
+  dragDropText: string;
+  selectLanguage: string;
+  privacyNote: string;
+  analyzingTitle: string;
+  analyzingSubtitle: string;
+  resultHeadingNotice: string;
+  resultHeadingAction: string;
+  detailsHeading: string;
+  deadlineLabel: string;
+  amountLabel: string;
+  issuerLabel: string;
+  referenceLabel: string;
+  noDeadline: string;
+  noAmount: string;
+  scamAlertTitle: string;
+  scamWarningSubtitle: string;
+  scamShieldPoints: {
+    noOtp: string;
+    noPersonalUpi: string;
+    verifyOfficial: string;
+    cannotConfirmGenuine: string;
+  };
+  fallbackNotice: string;
+  fallbackSubtext: string;
+  listenButton: string;
+  stopListeningButton: string;
+  shareWhatsAppButton: string;
+  retakeButton: string;
+  anotherNoticeButton: string;
+  sampleNoticesTitle: string;
+  highRiskBadge: string;
+  warningRiskBadge: string;
+  safeBadge: string;
+  documentTypes: Record<DocumentType, string>;
+  actionLabels: Record<ImmediateAction, string>;
+  errorUploadTooBig: string;
+  errorGeneric: string;
+  viewDetails: string;
+  hideDetails: string;
+  disclaimerPrefix: string;
+}
+
+export const TRANSLATIONS: Record<SupportedLanguage, UiTranslations> = {
+  te: {
+    appName: "నోటీస్ ఎక్స్‌ప్లెయినర్ (Notice Explainer)",
+    appSubtitle: "అధికారిక నోటీసులను సులభంగా మరియు సురక్షితంగా అర్థం చేసుకోండి",
+    heroTagline: "విద్యుత్ బిల్లులు, బ్యాంక్ నోటీసులు, లేదా కోర్టు పత్రాల ఫోటో తీయండి - సరళమైన తెలుగులో అర్థం తెలుసుకోండి.",
+    cameraButton: "నోటీస్ ఫోటో తీయండి",
+    uploadButton: "గ్యాలరీ నుండి ఫోటో ఎంచుకోండి",
+    sampleButton: "నమూనా నోటీస్ ప్రయత్నించండి",
+    dragDropText: "ఫోటోను ఇక్కడ వేయండి లేదా క్లిక్ చేయండి",
+    selectLanguage: "మీ భాషను ఎంచుకోండి",
+    privacyNote: "మీ ఫోటో నోటీసును అర్థం చేసుకోవడానికి మాత్రమే విశ్లేషించబడుతుంది. ఇది శాశ్వతంగా నిల్వ చేయబడదు.",
+    analyzingTitle: "నోటీసును చదువుతున్నాము...",
+    analyzingSubtitle: "ముఖ్యమైన వివరాలు, గడువు మరియు భద్రతను తనిఖీ చేస్తున్నాము",
+    resultHeadingNotice: "ఈ నోటీసు ఏమిటి?",
+    resultHeadingAction: "నేను వెంటనే ఏమి చేయాలి?",
+    detailsHeading: "గుర్తించిన పూర్తి వివరాలు",
+    deadlineLabel: "గడువు తేదీ (Deadline)",
+    amountLabel: "చెల్లించాల్సిన మొత్తం (Amount Due)",
+    issuerLabel: "జారీ చేసిన సంస్థ (Issuer)",
+    referenceLabel: "రిఫరెన్స్ / ఖాతా సంఖ్య",
+    noDeadline: "నోటీసులో స్పష్టమైన గడువు పేర్కొనబడలేదు",
+    noAmount: "నోటీసులో నిర్దిష్ట మొత్తం పేర్కొనబడలేదు",
+    scamAlertTitle: "మోసం / స్కామ్ హెచ్చరిక (Scam Red Flag)",
+    scamWarningSubtitle: "ఈ నోటీసులో అనుమానాస్పద అంశాలు గమనించబడ్డాయి. జాగ్రత్త వహించండి!",
+    scamShieldPoints: {
+      noOtp: "ఎవరితోనూ మీ OTP, పిన్, పాస్‌వర్డ్ లేదా CVV పంచుకోవద్దు.",
+      noPersonalUpi: "వ్యక్తిగత UPI IDలకు లేదా తెలియని ఖాతాలకు డబ్బు పంపవద్దు.",
+      verifyOfficial: "అధికారిక వెబ్‌సైట్ లేదా మీ పాత బిల్లులోని నంబర్‌తో మాత్రమే సంస్థను సంప్రదించి ధృవీకరించుకోండి.",
+      cannotConfirmGenuine: "ఈ యాప్ నోటీసు నిజమైనదా కాదా అనేది 100% నిర్ధారించలేదు. అనుమానం ఉంటే ఎల్లప్పుడూ అధికారిక కార్యాలయాన్ని కలవండి.",
+    },
+    fallbackNotice: "ఈ నోటీసు గురించి నాకు ఖచ్చితంగా తెలియదు. దయచేసి మీరు విశ్వసించే వారిని అడగండి లేదా అధికారిక సంస్థను నేరుగా సంప్రదించండి.",
+    fallbackSubtext: "ఫోటో అస్పష్టంగా ఉండవచ్చు లేదా వివరాలు అసంపూర్ణంగా ఉండవచ్చు.",
+    listenButton: "చదివి వినిపించండి (Listen)",
+    stopListeningButton: "ఆపండి (Stop)",
+    shareWhatsAppButton: "WhatsApp లో షేర్ చేయండి",
+    retakeButton: "మళ్లీ ఫోటో తీయండి",
+    anotherNoticeButton: "మరొక నోటీసును పరిశీలించండి",
+    sampleNoticesTitle: "పరీక్షించడానికి నమూనా నోటీసులు",
+    highRiskBadge: "తీవ్రమైన ప్రమాదం (High Scam Risk)",
+    warningRiskBadge: "అనుమానాస్పదం (Warning)",
+    safeBadge: "సాధారణ నోటీసు (No Scam Signs)",
+    documentTypes: {
+      electricity: "విద్యుత్ శాఖ నోటీసు",
+      bank: "బ్యాంక్ / KYC నోటీసు",
+      court: "కోర్టు సమన్లు / న్యాయ పత్రం",
+      tax: "ఆదాయ పన్ను / జీఎస్టీ డిమాండ్",
+      insurance: "బీమా పాలసీ నోటీసు",
+      government: "ప్రభుత్వ అధికారిక నోటీసు",
+      unknown: "ఇతర పత్రం",
+    },
+    actionLabels: {
+      pay_online: "అధికారిక పోర్టల్‌లో ఆన్‌లైన్ చెల్లింపు చేయండి",
+      visit_branch: "సమీపంలోని అధికారిక శాఖ లేదా కార్యాలయాన్ని సందర్శించండి",
+      contact_issuer: "అధికారిక హెల్ప్‌లైన్ నంబర్‌కు నేరుగా కాల్ చేయండి",
+      submit_document: "అడిగిన పత్రాలను అధికారిక కార్యాలయంలో సమర్పించండి",
+      ignore: "దీనిపై ప్రస్తుతానికి ఎటువంటి చర్య అవసరం లేదు",
+      ask_trusted_person: "మీరు నమ్మే వ్యక్తి లేదా న్యాయవాది సహాయం తీసుకోండి",
+      unclear: "స్పష్టంగా లేదు - అధికారిక సంస్థను సంప్రదించండి",
+    },
+    errorUploadTooBig: "చిత్రం పరిమాణం చాలా పెద్దదిగా ఉంది (8MB కంటే తక్కువ ఉండాలి).",
+    errorGeneric: "నోటీసును చదవడంలో సమస్య ఎదురైంది. దయచేసి స్పష్టమైన ఫోటోతో మళ్లీ ప్రయత్నించండి.",
+    viewDetails: "మరిన్ని వివరాలు చూడండి",
+    hideDetails: "వివరాలను దాచండి",
+    disclaimerPrefix: "ముఖ్య గమనిక: ఇది న్యాయ సలహా కాదు. చర్య తీసుకునే ముందు అధికారిక జారీకర్తతో ధృవీకరించుకోండి.",
+  },
+  hi: {
+    appName: "नोटिस एक्सप्लेनर (Notice Explainer)",
+    appSubtitle: "सरकारी और आधिकारिक नोटिस को आसानी से और सुरक्षित समझें",
+    heroTagline: "बिजली बिल, बैंक केवाईसी, या कोर्ट नोटिस की तस्वीर लें - सरल हिंदी में तुरंत समझें।",
+    cameraButton: "नोटिस की फोटो लें",
+    uploadButton: "गैलरी से फोटो चुनें",
+    sampleButton: "सैंपल नोटिस से आज़माएं",
+    dragDropText: "फोटो यहाँ खींचें या क्लिक करें",
+    selectLanguage: "अपनी भाषा चुनें",
+    privacyNote: "आपकी फोटो केवल नोटिस समझाने के लिए प्रोसेस की जाती है और इसे स्थायी रूप से सेव नहीं किया जाता है।",
+    analyzingTitle: "नोटिस को पढ़ रहे हैं...",
+    analyzingSubtitle: "जरूरी विवरण, अंतिम तारीख और सुरक्षा की जांच हो रही है",
+    resultHeadingNotice: "यह नोटिस किस बारे में है?",
+    resultHeadingAction: "मुझे तुरंत क्या करना चाहिए?",
+    detailsHeading: "पहचाने गए पूर्ण विवरण",
+    deadlineLabel: "अंतिम तिथि (Deadline)",
+    amountLabel: "देय राशि (Amount Due)",
+    issuerLabel: "जारीकर्ता संस्था (Issuer)",
+    referenceLabel: "संदर्भ / खाता संख्या (Reference ID)",
+    noDeadline: "नोटिस में कोई स्पष्ट अंतिम तिथि नहीं दी गई है",
+    noAmount: "नोटिस में कोई निश्चित राशि नहीं लिखी है",
+    scamAlertTitle: "धोखाधड़ी / स्कैम चेतावनी (Scam Warning)",
+    scamWarningSubtitle: "इस नोटिस में संदिग्ध संकेत मिले हैं। कृपया सावधान रहें!",
+    scamShieldPoints: {
+      noOtp: "कभी भी अपना OTP, PIN, पासवर्ड या CVV किसी से साझा न करें।",
+      noPersonalUpi: "किसी भी व्यक्तिगत UPI ID या अनजान बैंक खाते में पैसे न भेजें।",
+      verifyOfficial: "जारीकर्ता की आधिकारिक वेबसाइट या पुराने आधिकारिक बिल पर दिए नंबर से ही पुष्टि करें।",
+      cannotConfirmGenuine: "यह ऐप नोटिस के 100% असली होने की पुष्टि नहीं कर सकता। संदेह होने पर हमेशा आधिकारिक कार्यालय से संपर्क करें।",
+    },
+    fallbackNotice: "मुझे इस नोटिस के बारे में पूरा यकीन नहीं है। कृपया किसी भरोसेमंद व्यक्ति से पूछें या सीधे आधिकारिक जारीकर्ता से संपर्क करें।",
+    fallbackSubtext: "हो सकता है कि फोटो धुंधली हो या विवरण कटे हुए हों।",
+    listenButton: "सुनें (Listen)",
+    stopListeningButton: "रोकें (Stop)",
+    shareWhatsAppButton: "WhatsApp पर शेयर करें",
+    retakeButton: "फिर से फोटो लें",
+    anotherNoticeButton: "दूसरा नोटिस जांचें",
+    sampleNoticesTitle: "परीक्षण के लिए नमूना नोटिस",
+    highRiskBadge: "गंभीर खतरा (High Scam Risk)",
+    warningRiskBadge: "संदिग्ध (Warning)",
+    safeBadge: "सामान्य नोटिस (No Scam Signs)",
+    documentTypes: {
+      electricity: "बिजली विभाग नोटिस",
+      bank: "बैंक / केवाईसी नोटिस",
+      court: "अदालती सम्मन / कानूनी नोटिस",
+      tax: "इनकम टैक्स / जीएसटी मांग",
+      insurance: "बीमा पॉलिसी नोटिस",
+      government: "सरकारी आधिकारिक नोटिस",
+      unknown: "अन्य दस्तावेज",
+    },
+    actionLabels: {
+      pay_online: "आधिकारिक पोर्टल पर ऑनलाइन भुगतान करें",
+      visit_branch: "निकटतम आधिकारिक शाखा या कार्यालय जाएं",
+      contact_issuer: "आधिकारिक हेल्पलाइन नंबर पर सीधे संपर्क करें",
+      submit_document: "मांगे गए दस्तावेज आधिकारिक दफ्तर में जमा करें",
+      ignore: "इस पर फिलहाल कोई कार्रवाई आवश्यक नहीं है",
+      ask_trusted_person: "किसी भरोसेमंद व्यक्ति या जानकार से सलाह लें",
+      unclear: "स्पष्ट नहीं है - आधिकारिक संस्था से संपर्क करें",
+    },
+    errorUploadTooBig: "छवि का आकार बहुत बड़ा है (8MB से कम होना चाहिए)।",
+    errorGeneric: "नोटिस पढ़ने में समस्या आई। कृपया स्पष्ट फोटो के साथ पुनः प्रयास करें।",
+    viewDetails: "अधिक विवरण देखें",
+    hideDetails: "विवरण छिपाएं",
+    disclaimerPrefix: "महत्वपूर्ण: यह कानूनी सलाह नहीं है। कोई भी कदम उठाने से पहले आधिकारिक जारीकर्ता से पुष्टि करें।",
+  },
+  en: {
+    appName: "Notice Explainer",
+    appSubtitle: "Understand official notices safely & immediately",
+    heroTagline: "Photograph any electricity bill, bank notice, or court summons to get clear, plain-language triage.",
+    cameraButton: "Take photo of notice",
+    uploadButton: "Choose image",
+    sampleButton: "Try a sample notice",
+    dragDropText: "Drop photo here or click to browse",
+    selectLanguage: "Select language",
+    privacyNote: "Your photo is processed to explain the notice and is not saved by default.",
+    analyzingTitle: "Analyzing your notice...",
+    analyzingSubtitle: "Detecting visible details, deadlines, and scam indicators",
+    resultHeadingNotice: "What is this notice?",
+    resultHeadingAction: "What should I do?",
+    detailsHeading: "Extracted Notice Details",
+    deadlineLabel: "Deadline",
+    amountLabel: "Amount Due",
+    issuerLabel: "Issuer / Authority",
+    referenceLabel: "Reference / Account ID",
+    noDeadline: "No visible deadline in notice",
+    noAmount: "No visible amount due in notice",
+    scamAlertTitle: "Scam Warning Alert",
+    scamWarningSubtitle: "Suspicious flags were detected in this notice. Please stay vigilant!",
+    scamShieldPoints: {
+      noOtp: "Never share your OTP, PIN, password, or CVV with anyone.",
+      noPersonalUpi: "Do not pay to personal UPI IDs or unverified bank accounts.",
+      verifyOfficial: "Verify by contacting the official issuer using the number on its official website or a previous official bill.",
+      cannotConfirmGenuine: "This app cannot confirm whether a notice is genuine. Always contact the official issuer if in doubt.",
+    },
+    fallbackNotice: "I’m not sure about this notice. Please ask someone you trust or contact the official issuer directly.",
+    fallbackSubtext: "The photo may be blurry, cropped, or handwriting is unclear.",
+    listenButton: "Listen to Summary",
+    stopListeningButton: "Stop Listening",
+    shareWhatsAppButton: "Share on WhatsApp",
+    retakeButton: "Retake Photo",
+    anotherNoticeButton: "Check another notice",
+    sampleNoticesTitle: "Try sample notices",
+    highRiskBadge: "High Scam Risk",
+    warningRiskBadge: "Warning / Suspicious",
+    safeBadge: "No Scam Signs Detected",
+    documentTypes: {
+      electricity: "Electricity Department Notice",
+      bank: "Bank / KYC Notice",
+      court: "Court Summons / Legal Document",
+      tax: "Tax Demand Notice (IT / GST)",
+      insurance: "Insurance Policy Notice",
+      government: "Government / Municipal Notice",
+      unknown: "General Official Document",
+    },
+    actionLabels: {
+      pay_online: "Pay online via the official portal only",
+      visit_branch: "Visit the official branch or municipal office in person",
+      contact_issuer: "Call the verified official helpline number",
+      submit_document: "Submit required documents at the official office",
+      ignore: "No immediate action required right now",
+      ask_trusted_person: "Show this to a trusted family member or legal advisor",
+      unclear: "Unclear — Please contact the official issuer directly",
+    },
+    errorUploadTooBig: "Image size is too large (must be under 8MB).",
+    errorGeneric: "Failed to analyze notice. Please try again with a clearer photo.",
+    viewDetails: "View full extracted details",
+    hideDetails: "Hide details",
+    disclaimerPrefix: "Notice: This is not legal advice. Verify with the official issuer before acting.",
+  },
+};
