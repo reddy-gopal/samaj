@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenAI } from "@google/genai";
 import { NoticeTriageSchema, TriageRequestSchema, NoticeTriageResult } from "@/lib/schema";
 import { getTriageSystemPrompt } from "@/lib/prompt";
-import { SAMPLE_NOTICES } from "@/lib/samples";
 
 export const maxDuration = 60; // 60s max execution time
 
@@ -31,7 +30,7 @@ export async function POST(req: NextRequest) {
     if (!parsedBody.success) {
       return NextResponse.json(
         {
-          error: "Invalid request payload",
+          error: "Invalid request payload. Image and language are required.",
           details: parsedBody.error.flatten(),
         },
         { status: 400 }
@@ -39,15 +38,6 @@ export async function POST(req: NextRequest) {
     }
 
     const { image, mimeType, language } = parsedBody.data;
-    const sampleId = (rawBody as { sampleId?: string }).sampleId;
-
-    // Check for cached sample match for instant zero-latency demo / fallback
-    if (sampleId) {
-      const matchedSample = SAMPLE_NOTICES.find((s) => s.id === sampleId);
-      if (matchedSample && matchedSample.sampleResults[language]) {
-        return NextResponse.json(matchedSample.sampleResults[language]);
-      }
-    }
 
     // Clean base64 string
     const base64Data = image.includes("base64,")
@@ -66,20 +56,18 @@ export async function POST(req: NextRequest) {
 
     const apiKey = process.env.GEMINI_API_KEY;
 
-    // Fallback if no API key is provided
     if (!apiKey) {
-      console.warn("GEMINI_API_KEY not configured. Using cached demonstration notice.");
-      const defaultSample = SAMPLE_NOTICES[0];
-      return NextResponse.json(defaultSample.sampleResults[language]);
+      return NextResponse.json(
+        { error: "GEMINI_API_KEY is missing from environment. Please add GEMINI_API_KEY to your .env file." },
+        { status: 401 }
+      );
     }
 
     const ai = new GoogleGenAI({ apiKey });
     const systemPrompt = getTriageSystemPrompt(language);
 
-    // OPEN-WEIGHT MODELS ONLY:
+    // OPEN-WEIGHT MODEL:
     // Uses Google's open-weight Gemma 4 models through the Gemini API.
-    // - gemma-4-26b-a4b-it: Fast, highly responsive open-weight multimodal model (~4s)
-    // - gemma-4-31b-it: Full 31B open-weight model candidate
     const candidateModels = process.env.GEMINI_MODEL
       ? [process.env.GEMINI_MODEL, "gemma-4-26b-a4b-it", "gemma-4-31b-it"]
       : ["gemma-4-26b-a4b-it", "gemma-4-31b-it"];
@@ -89,7 +77,7 @@ export async function POST(req: NextRequest) {
 
     for (const modelName of candidateModels) {
       try {
-        console.log(`[Notice Explainer] Invoking open-weight model: ${modelName}...`);
+        console.log(`[Notice Explainer] Sending real image to open-weight model: ${modelName}...`);
         const response = await ai.models.generateContent({
           model: modelName,
           contents: [
@@ -124,7 +112,7 @@ export async function POST(req: NextRequest) {
           const parsedJson = extractAndParseJson(rawText);
           const validation = NoticeTriageSchema.safeParse(parsedJson);
           if (validation.success) {
-            console.log(`[Notice Explainer] Successfully extracted and validated triage with open-weight ${modelName}!`);
+            console.log(`[Notice Explainer] Successfully extracted and validated real triage with ${modelName}!`);
             validatedResult = validation.data;
             break;
           } else {
@@ -135,7 +123,7 @@ export async function POST(req: NextRequest) {
         }
       } catch (callErr: unknown) {
         lastError = callErr;
-        console.warn(`[Notice Explainer] Open-weight model ${modelName} failed or unavailable:`, (callErr as Error)?.message || callErr);
+        console.warn(`[Notice Explainer] Open-weight model ${modelName} failed:`, (callErr as Error)?.message || callErr);
       }
     }
 
@@ -143,10 +131,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(validatedResult);
     }
 
-    // If both open-weight models failed or threw errors, fallback gracefully to cached sample result
-    console.error("All open-weight Gemma model attempts exhausted. Last error:", lastError);
-    const fallbackNotice = SAMPLE_NOTICES[0].sampleResults[language];
-    return NextResponse.json(fallbackNotice);
+    // Return real error if model failed
+    const errorMsg = lastError instanceof Error ? lastError.message : "Unable to analyze notice image.";
+    return NextResponse.json(
+      {
+        error: "Gemma 4 was unable to parse this image. Please upload a clearer, well-lit photograph of the notice.",
+        details: errorMsg,
+      },
+      { status: 502 }
+    );
   } catch (error: unknown) {
     console.error("Explain route error:", error);
     const msg = error instanceof Error ? error.message : "Internal server error";
