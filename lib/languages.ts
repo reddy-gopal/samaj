@@ -79,6 +79,14 @@ export interface UiTranslations {
   viewDetails: string;
   hideDetails: string;
   disclaimerPrefix: string;
+  notDocumentTitle: string;
+  notDocumentMessage: string;
+  notSpecified: string;
+  purposeUnclear: string;
+  tipsTitle: string;
+  tipsFlat: string;
+  tipsLight: string;
+  tipsEdges: string;
 }
 
 export const TRANSLATIONS: Record<SupportedLanguage, UiTranslations> = {
@@ -129,7 +137,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, UiTranslations> = {
       tax: "ఆదాయ పన్ను / జీఎస్టీ డిమాండ్",
       insurance: "బీమా పాలసీ నోటీసు",
       government: "ప్రభుత్వ అధికారిక నోటీసు",
-      unknown: "ఇతర పత్రం",
+      unknown: "గుర్తించబడని పత్రం",
     },
     actionLabels: {
       pay_online: "అధికారిక పోర్టల్‌లో ఆన్‌లైన్ చెల్లింపు చేయండి",
@@ -145,6 +153,14 @@ export const TRANSLATIONS: Record<SupportedLanguage, UiTranslations> = {
     viewDetails: "మరిన్ని వివరాలు చూడండి",
     hideDetails: "వివరాలను దాచండి",
     disclaimerPrefix: "ముఖ్య గమనిక: ఇది న్యాయ సలహా కాదు. చర్య తీసుకునే ముందు అధికారిక జారీకర్తతో ధృవీకరించుకోండి.",
+    notDocumentTitle: "అధికారిక పత్రం లేదా నోటీసు కనిపించలేదు",
+    notDocumentMessage: "ఈ ఫోటోలో ఎటువంటి అధికారిక లేఖ, బిల్లు లేదా నోటీసు కనిపించలేదు. ఇది నేల, వస్తువు లేదా ఇతర దృశ్యంగా కనిపిస్తోంది.",
+    notSpecified: "నోటీసులో పేర్కొనబడలేదు",
+    purposeUnclear: "చిత్రం నుండి స్పష్టంగా లేదు",
+    tipsTitle: "స్పష్టమైన ఫోటో తీయడానికి చిట్కాలు",
+    tipsFlat: "మీ కాగితపు నోటీసును బల్ల లేదా ఫ్లాట్ ఉపరితలంపై నిటారుగా ఉంచండి",
+    tipsLight: "మంచి వెలుతురు ఉండేలా చూసుకోండి మరియు నీడలను నివారించండి",
+    tipsEdges: "నోటీసు నాలుగు అంచులు మరియు అక్షరాలు స్పష్టంగా కెమెరాలో కనిపించాలి",
   },
   hi: {
     appName: "नोटिस एक्सप्लेनर (Notice Explainer)",
@@ -193,7 +209,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, UiTranslations> = {
       tax: "इनकम टैक्स / जीएसटी मांग",
       insurance: "बीमा पॉलिसी नोटिस",
       government: "सरकारी आधिकारिक नोटिस",
-      unknown: "अन्य दस्तावेज",
+      unknown: "अज्ञात दस्तावेज",
     },
     actionLabels: {
       pay_online: "आधिकारिक पोर्टल पर ऑनलाइन भुगतान करें",
@@ -209,6 +225,14 @@ export const TRANSLATIONS: Record<SupportedLanguage, UiTranslations> = {
     viewDetails: "अधिक विवरण देखें",
     hideDetails: "विवरण छिपाएं",
     disclaimerPrefix: "महत्वपूर्ण: यह कानूनी सलाह नहीं है। कोई भी कदम उठाने से पहले आधिकारिक जारीकर्ता से पुष्टि करें।",
+    notDocumentTitle: "कोई आधिकारिक पत्र या नोटिस नहीं मिला",
+    notDocumentMessage: "इस फोटो में कोई आधिकारिक नोटिस, बिल या कानूनी पत्र नहीं दिख रहा है। यह किसी वस्तु, फर्श या अन्य दृश्य की फोटो लग रही है।",
+    notSpecified: "दस्तावेज में उल्लिखित नहीं है",
+    purposeUnclear: "फोटो से स्पष्ट नहीं है",
+    tipsTitle: "स्पष्ट फोटो लेने के लिए सुझाव",
+    tipsFlat: "अपने नोटिस को टेबल या समतल जगह पर सीधा रखें",
+    tipsLight: "अच्छी रोशनी में फोटो लें और परछाई या चमक से बचें",
+    tipsEdges: "नोटिस के चारों कोने और लिखावट फ्रेम में पूरी तरह आनी चाहिए",
   },
   en: {
     appName: "Notice Explainer",
@@ -257,7 +281,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, UiTranslations> = {
       tax: "Tax Demand Notice (IT / GST)",
       insurance: "Insurance Policy Notice",
       government: "Government / Municipal Notice",
-      unknown: "General Official Document",
+      unknown: "Uncategorized Document",
     },
     actionLabels: {
       pay_online: "Pay online via the official portal only",
@@ -273,5 +297,13 @@ export const TRANSLATIONS: Record<SupportedLanguage, UiTranslations> = {
     viewDetails: "View full extracted details",
     hideDetails: "Hide details",
     disclaimerPrefix: "Notice: This is not legal advice. Verify with the official issuer before acting.",
+    notDocumentTitle: "No Official Notice Detected",
+    notDocumentMessage: "This photo does not appear to contain an official notice, bill, or legal document. It seems to show an unrelated surface, object, or outdoor scene.",
+    notSpecified: "Not specified in document",
+    purposeUnclear: "Unclear from current photo",
+    tipsTitle: "Tips for a clear capture",
+    tipsFlat: "Place your paper notice flat on a table or plain surface",
+    tipsLight: "Ensure bright lighting and avoid harsh shadows or flash glares",
+    tipsEdges: "Keep all four corners and printed text clearly within the camera frame",
   },
 };
