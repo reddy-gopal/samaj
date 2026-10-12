@@ -3,10 +3,13 @@
 import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { SupportedLanguage, NoticeTriageResult } from "@/lib/schema";
+import { SAMPLE_NOTICES, SampleNoticeItem } from "@/lib/samples";
 import { Navbar } from "@/components/Navbar";
 import { TriageCard } from "@/components/TriageCard";
 import { HowItWorks } from "@/components/HowItWorks";
 import { LiveCameraModal } from "@/components/LiveCameraModal";
+import { SampleNoticesCarousel } from "@/components/SampleNoticesCarousel";
+import { SafetyTips } from "@/components/SafetyTips";
 import {
   Camera,
   Upload,
@@ -330,6 +333,23 @@ export default function LetterWiseApp() {
     document.getElementById("analysis-section")?.scrollIntoView({ behavior: "smooth" });
   };
 
+  const handleSelectSample = (
+    sample: SampleNoticeItem,
+    sampleResult: NoticeTriageResult,
+    thumbnailDataUrl: string
+  ) => {
+    setErrorMessage(null);
+    setTriageResult(sampleResult);
+    setCurrentImage(thumbnailDataUrl);
+    setFileName(sample.title);
+    setFileType("image");
+    setPdfPages([]);
+    setCurrentPageIndex(1);
+    saveRealAnalysis(sampleResult, thumbnailDataUrl);
+    setMobileDetailOpen(true);
+    document.getElementById("analysis-section")?.scrollIntoView({ behavior: "smooth" });
+  };
+
   const renderBadgeComponent = (badge: RealAnalysisRecord["badge"]) => {
     if (badge.type === "genuine") {
       return (
@@ -620,9 +640,23 @@ export default function LetterWiseApp() {
             </div>
           )}
 
+          {/* Sample Notices Carousel on Mobile */}
+          <div className="pt-2">
+            <SampleNoticesCarousel
+              currentLanguage={language}
+              onSelectSample={handleSelectSample}
+              isLoading={isLoading}
+            />
+          </div>
+
           {/* Mobile How It Works Section */}
           <div className="pt-4 pb-2">
-            <HowItWorks onScanClick={() => cameraInputRef.current?.click()} />
+            <HowItWorks onScanClick={() => setShowCameraModal(true)} />
+          </div>
+
+          {/* Safety Tips on Mobile */}
+          <div className="pt-2">
+            <SafetyTips language={language} />
           </div>
         </div>
 
@@ -879,6 +913,15 @@ export default function LetterWiseApp() {
             </div>
           </section>
 
+          {/* Sample Notices Carousel on Desktop */}
+          <section id="samples" className="space-y-4 pt-2">
+            <SampleNoticesCarousel
+              currentLanguage={language}
+              onSelectSample={handleSelectSample}
+              isLoading={isLoading}
+            />
+          </section>
+
           {/* Desktop How It Works Section */}
           <HowItWorks onScanClick={() => fileInputRef.current?.click()} />
 
@@ -1001,6 +1044,11 @@ export default function LetterWiseApp() {
                 ))}
               </div>
             )}
+          </section>
+
+          {/* Safety Tips on Desktop */}
+          <section id="safety" className="space-y-4 pt-4">
+            <SafetyTips language={language} />
           </section>
         </main>
       </div>

@@ -22,9 +22,9 @@ export default function ResultPage() {
         <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white mx-auto flex items-center justify-center">
           <Shield className="w-6 h-6" />
         </div>
-        <h1 className="text-xl font-black text-neutral-900">Notice Explainer Result</h1>
+        <h1 className="text-xl font-black text-neutral-900">Samaj Notice Triage</h1>
         <p className="text-sm font-medium text-neutral-600">
-          Redirecting to notice capture & scanner...
+          Redirecting to Samaj notice scanner...
         </p>
         <Link
           href="/"
