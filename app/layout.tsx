@@ -25,14 +25,14 @@ const notoSansDevanagari = Noto_Sans_Devanagari({
 });
 
 export const viewport: Viewport = {
-  themeColor: "#059669",
+  themeColor: "#2563EB",
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
 };
 
 export const metadata: Metadata = {
-  title: "Samaj — Understand Official Notices & Letters Safely",
+  title: "LetterWise — Understand Official Letters & Notices Safely",
   description:
     "Instant, accessible plain-language triage for electricity bills, bank KYC notices, court summons, and tax demands in Telugu, Hindi, and English.",
   manifest: "/manifest.json",
@@ -43,7 +43,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Samaj",
+    title: "LetterWise",
   },
 };
 
@@ -57,7 +57,7 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} ${notoSansTelugu.variable} ${notoSansDevanagari.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-neutral-100 text-neutral-900 font-sans selection:bg-emerald-200">
+      <body className="min-h-full flex flex-col bg-neutral-100 text-neutral-900 font-sans selection:bg-blue-200">
         {children}
       </body>
     </html>
