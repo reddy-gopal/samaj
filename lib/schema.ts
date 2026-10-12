@@ -37,6 +37,7 @@ export type Confidence = z.infer<typeof ConfidenceSchema>;
 
 export const NoticeTriageSchema = z.object({
   language: SupportedLanguageSchema,
+  is_document: z.boolean().optional(),
   is_legible: z.boolean(),
   document_type: DocumentTypeSchema,
   core_meaning: z.string().nullable(),
