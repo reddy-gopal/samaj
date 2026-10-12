@@ -22,6 +22,9 @@ import {
   HelpCircle,
   Clock,
   Banknote,
+  Hash,
+  Camera,
+  Upload,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
@@ -40,6 +43,8 @@ interface TriageCardProps {
   onReset: () => void;
   imageUrl?: string;
   onLanguageChange?: (lang: SupportedLanguage) => void;
+  onTakePhoto?: () => void;
+  onUpload?: () => void;
   documentMeta?: DocumentMeta;
 }
 
@@ -49,6 +54,8 @@ export const TriageCard: React.FC<TriageCardProps> = ({
   onReset,
   imageUrl,
   onLanguageChange,
+  onTakePhoto,
+  onUpload,
   documentMeta,
 }) => {
   const t = TRANSLATIONS[language];
@@ -62,6 +69,15 @@ export const TriageCard: React.FC<TriageCardProps> = ({
       }
     };
   }, []);
+
+  // Strict check if image is NOT a document at all
+  const isNotDocument =
+    triage.is_document === false ||
+    (!triage.is_legible &&
+      triage.document_type === "unknown" &&
+      !triage.issuer_name &&
+      !triage.amount_due &&
+      !triage.deadline);
 
   const isScam = triage.scam_risk !== "none_detected";
   const isFallback =
@@ -77,7 +93,8 @@ export const TriageCard: React.FC<TriageCardProps> = ({
     }
 
     window.speechSynthesis.cancel();
-    const textToSpeak = triage.core_meaning || triage.action_instructions || "Notice summary";
+    const textToSpeak =
+      triage.core_meaning || triage.action_instructions || t.notDocumentMessage || "Notice summary";
     const utterance = new SpeechSynthesisUtterance(textToSpeak);
 
     if (language === "te") utterance.lang = "te-IN";
@@ -111,6 +128,142 @@ export const TriageCard: React.FC<TriageCardProps> = ({
     window.open(`https://wa.me/?text=${encodeURIComponent(lines)}`, "_blank");
   };
 
+  // ==============================================================
+  // 1. DEDICATED VIEW WHEN IMAGE IS NOT RELEVANT / NOT A DOCUMENT
+  // ==============================================================
+  if (isNotDocument) {
+    return (
+      <section className="w-full bg-white rounded-3xl border border-amber-200 shadow-sm p-4 sm:p-6 lg:p-8 space-y-6">
+        {/* Prominent Direct Alert Banner */}
+        <div className="flex items-center justify-between p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-950">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-xs">
+              <HelpCircle className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="font-extrabold text-base sm:text-lg text-amber-950">
+                {t.notDocumentTitle}
+              </h3>
+              <p className="text-xs sm:text-sm font-semibold text-amber-900 mt-0.5 leading-relaxed">
+                {triage.core_meaning || t.notDocumentMessage}
+              </p>
+            </div>
+          </div>
+          <span className="text-xs font-black px-3 py-1 rounded-full bg-amber-200 text-amber-950 border border-amber-300 shrink-0 hidden sm:inline-block">
+            Not a Notice
+          </span>
+        </div>
+
+        {/* 2-Column Layout: Analyzed Photo + Helpful Guidance */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          {/* Left: Scanned Image Preview */}
+          <div className="lg:col-span-4 flex flex-col items-center">
+            <div className="w-full max-w-[240px] aspect-[3/4] rounded-2xl border-2 border-dashed border-amber-300 bg-amber-50/30 p-2 shadow-2xs overflow-hidden flex flex-col items-center justify-center relative">
+              {imageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={imageUrl}
+                  alt="Scanned photo preview"
+                  className="w-full h-full object-contain rounded-xl"
+                />
+              ) : (
+                <div className="text-center p-4 text-amber-700">
+                  <AlertTriangle className="w-8 h-8 mx-auto mb-2 text-amber-500" />
+                  <span className="text-xs font-bold">Unrecognized Photo</span>
+                </div>
+              )}
+              <span className="absolute bottom-3 text-[10px] font-bold bg-amber-950/80 text-white px-2.5 py-1 rounded-full backdrop-blur-xs">
+                Analyzed Image
+              </span>
+            </div>
+          </div>
+
+          {/* Right: Helpful Guidance Cards */}
+          <div className="lg:col-span-8 space-y-4">
+            <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+              <h4 className="font-extrabold text-sm sm:text-base text-slate-900 flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-amber-600" />
+                <span>{t.tipsTitle}</span>
+              </h4>
+
+              <div className="space-y-2.5 text-xs sm:text-sm text-slate-700 font-semibold">
+                <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-white border border-slate-200/80">
+                  <FileText className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                  <span>{t.tipsFlat}</span>
+                </div>
+
+                <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-white border border-slate-200/80">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <span>{t.tipsLight}</span>
+                </div>
+
+                <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-white border border-slate-200/80">
+                  <ExternalLink className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
+                  <span>{t.tipsEdges}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Direct Action Buttons */}
+            <div className="flex flex-wrap items-center gap-3 pt-2">
+              {onTakePhoto && (
+                <button
+                  type="button"
+                  onClick={onTakePhoto}
+                  className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-sm transition-all cursor-pointer active:scale-98"
+                >
+                  <Camera className="w-4 h-4" />
+                  <span>{t.cameraButton}</span>
+                </button>
+              )}
+
+              {onUpload && (
+                <button
+                  type="button"
+                  onClick={onUpload}
+                  className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 font-bold text-sm transition-all cursor-pointer active:scale-98"
+                >
+                  <Upload className="w-4 h-4 text-blue-600" />
+                  <span>{t.uploadButton}</span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={onReset}
+                className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm transition-all cursor-pointer active:scale-98"
+              >
+                <RefreshCw className="w-4 h-4" />
+                <span>{t.anotherNoticeButton}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleSpeak}
+                className={`flex items-center gap-2 px-4 py-3 rounded-2xl font-bold text-sm transition-all cursor-pointer ${
+                  isSpeaking
+                    ? "bg-amber-500 text-white animate-pulse"
+                    : "bg-slate-100 hover:bg-slate-200 text-slate-700"
+                }`}
+              >
+                {isSpeaking ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4 text-blue-600" />}
+                <span>{isSpeaking ? "Stop" : "Listen"}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Subtle Disclaimer Footer */}
+        <p className="text-[11px] text-center text-slate-400">
+          ⚖️ {triage.disclaimer}
+        </p>
+      </section>
+    );
+  }
+
+  // ==============================================================
+  // 2. AUTHENTIC DOCUMENT TRIAGE CARD (WHEN IMAGE IS A NOTICE)
+  // ==============================================================
   return (
     <section className="w-full bg-white rounded-3xl border border-slate-200 shadow-sm p-4 sm:p-6 lg:p-8 space-y-6">
       {/* 3-Column Inspection Grid (Thumbnail, Details Table, Next Steps) */}
@@ -241,8 +394,9 @@ export const TriageCard: React.FC<TriageCardProps> = ({
             </div>
           )}
 
-          {/* Structured Specs Table matching the mockup */}
+          {/* Structured Specs Table — AUTHENTIC DATA ONLY */}
           <div className="rounded-2xl border border-slate-200 overflow-hidden bg-white text-xs sm:text-sm divide-y divide-slate-100">
+            {/* Letter Type */}
             <div className="grid grid-cols-12 p-3 items-center hover:bg-slate-50/50">
               <div className="col-span-5 flex items-center gap-2 text-slate-500 font-semibold">
                 <Landmark className="w-4 h-4 text-blue-600" />
@@ -253,26 +407,37 @@ export const TriageCard: React.FC<TriageCardProps> = ({
               </div>
             </div>
 
+            {/* From / Issuer */}
             <div className="grid grid-cols-12 p-3 items-center hover:bg-slate-50/50">
               <div className="col-span-5 flex items-center gap-2 text-slate-500 font-semibold">
                 <Building className="w-4 h-4 text-blue-600" />
                 <span>From</span>
               </div>
               <div className="col-span-7 font-bold text-slate-900">
-                {triage.issuer_name || "Official Issuing Authority"}
+                {triage.issuer_name ? (
+                  triage.issuer_name
+                ) : (
+                  <span className="text-slate-400 italic font-medium">{t.notSpecified}</span>
+                )}
               </div>
             </div>
 
+            {/* Purpose */}
             <div className="grid grid-cols-12 p-3 items-center hover:bg-slate-50/50">
               <div className="col-span-5 flex items-center gap-2 text-slate-500 font-semibold">
                 <FileText className="w-4 h-4 text-blue-600" />
                 <span>Purpose</span>
               </div>
-              <div className="col-span-7 font-medium text-slate-800 line-clamp-1">
-                {triage.core_meaning || "Official compliance notice"}
+              <div className="col-span-7 font-medium text-slate-800 line-clamp-2">
+                {triage.core_meaning ? (
+                  triage.core_meaning
+                ) : (
+                  <span className="text-slate-400 italic font-medium">{t.purposeUnclear}</span>
+                )}
               </div>
             </div>
 
+            {/* Language */}
             <div className="grid grid-cols-12 p-3 items-center hover:bg-slate-50/50">
               <div className="col-span-5 flex items-center gap-2 text-slate-500 font-semibold">
                 <Languages className="w-4 h-4 text-blue-600" />
@@ -283,7 +448,20 @@ export const TriageCard: React.FC<TriageCardProps> = ({
               </div>
             </div>
 
-            {/* Deadline / Amount due row if present */}
+            {/* Reference ID row if visibly present */}
+            {triage.reference_id && (
+              <div className="grid grid-cols-12 p-3 items-center hover:bg-slate-50/50">
+                <div className="col-span-5 flex items-center gap-2 text-slate-500 font-semibold">
+                  <Hash className="w-4 h-4 text-blue-600" />
+                  <span>Ref / ID</span>
+                </div>
+                <div className="col-span-7 font-mono font-bold text-slate-900">
+                  {triage.reference_id}
+                </div>
+              </div>
+            )}
+
+            {/* Deadline row if visibly present */}
             {triage.deadline && (
               <div className="grid grid-cols-12 p-3 items-center bg-red-50/40">
                 <div className="col-span-5 flex items-center gap-2 text-red-600 font-semibold">
@@ -296,6 +474,7 @@ export const TriageCard: React.FC<TriageCardProps> = ({
               </div>
             )}
 
+            {/* Amount due row if visibly present */}
             {triage.amount_due && (
               <div className="grid grid-cols-12 p-3 items-center bg-emerald-50/40">
                 <div className="col-span-5 flex items-center gap-2 text-emerald-700 font-semibold">
@@ -310,40 +489,67 @@ export const TriageCard: React.FC<TriageCardProps> = ({
           </div>
         </div>
 
-        {/* Right Column: "What to do next?" */}
+        {/* Right Column: Relative "What to do next?" */}
         <div className="lg:col-span-4 rounded-2xl border border-slate-200 bg-slate-50/70 p-4 sm:p-5 space-y-3.5">
-          <h3 className="font-extrabold text-sm sm:text-base text-slate-900 tracking-tight">
-            What to do next?
+          <h3 className="font-extrabold text-sm sm:text-base text-slate-900 tracking-tight flex items-center justify-between">
+            <span>What to do next?</span>
+            <span className="text-[10px] font-bold text-blue-700 bg-blue-100/70 px-2 py-0.5 rounded-full border border-blue-200">
+              Notice-Specific
+            </span>
           </h3>
 
           <div className="space-y-2.5 text-xs sm:text-sm font-semibold text-slate-700">
-            {/* Step 1 */}
-            <div className="flex items-start gap-2.5 p-2 rounded-xl bg-white border border-slate-200/80">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-              <span>Read the simple summary below carefully.</span>
-            </div>
+            {/* Primary tailored action instruction from image */}
+            {triage.action_instructions ? (
+              <div className="flex items-start gap-2.5 p-3 rounded-xl bg-white border border-blue-200/90 shadow-2xs">
+                <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                <span className="text-slate-900 leading-snug">
+                  {triage.action_instructions}
+                </span>
+              </div>
+            ) : (
+              <div className="flex items-start gap-2.5 p-3 rounded-xl bg-white border border-slate-200/80">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                <span>{t.actionLabels[triage.immediate_action] || t.resultHeadingAction}</span>
+              </div>
+            )}
 
-            {/* Step 2 */}
-            <div className="flex items-start gap-2.5 p-2 rounded-xl bg-white border border-slate-200/80">
-              <ExternalLink className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
-              <span>
-                {triage.action_instructions || "Check details directly with the official authority."}
-              </span>
-            </div>
+            {/* Relative deadline action if present */}
+            {triage.deadline && (
+              <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-white border border-red-200">
+                <Clock className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                <span className="text-red-950 font-medium">
+                  Ensure resolution before deadline: <strong className="font-bold">{triage.deadline}</strong>
+                </span>
+              </div>
+            )}
 
-            {/* Step 3 */}
-            <div className="flex items-start gap-2.5 p-2 rounded-xl bg-white border border-slate-200/80">
-              <Building className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-              <span>If required, visit your nearest official branch or office.</span>
-            </div>
+            {/* Relative amount due guidance if present */}
+            {triage.amount_due && (
+              <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-white border border-emerald-200">
+                <Banknote className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                <span className="text-emerald-950 font-medium">
+                  Verify stated amount <strong className="font-bold">{triage.amount_due}</strong> on official portal only.
+                </span>
+              </div>
+            )}
 
-            {/* Step 4: Security Shield Rule */}
-            <div className="flex items-start gap-2.5 p-2 rounded-xl bg-white border border-red-200">
-              <Lock className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
-              <span className="text-red-950 font-bold">
-                Do not share OTP, PIN, password, or CVV with anyone.
-              </span>
-            </div>
+            {/* Security Shield Rule */}
+            {isScam ? (
+              <div className="flex items-start gap-2.5 p-3 rounded-xl bg-red-50 border border-red-200">
+                <Lock className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                <span className="text-red-950 font-bold leading-snug">
+                  Do not pay to personal UPI IDs or share OTP, PIN, password, or CVV.
+                </span>
+              </div>
+            ) : (
+              <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-white border border-slate-200/80">
+                <ExternalLink className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
+                <span className="text-slate-600 font-medium">
+                  Verify details directly on the issuer&apos;s verified portal before payment.
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -451,7 +657,7 @@ export const TriageCard: React.FC<TriageCardProps> = ({
           <Sparkles className="w-5 h-5 text-purple-600" />
           <span>
             {activeTab === "detailed"
-              ? "Detailed Legal & Official Breakdown"
+              ? "Detailed Official Breakdown"
               : activeTab === "telugu"
               ? "సరళమైన వివరణ (Simple Summary)"
               : activeTab === "hindi"
@@ -462,11 +668,10 @@ export const TriageCard: React.FC<TriageCardProps> = ({
 
         <p className="text-sm sm:text-base font-semibold text-slate-800 leading-relaxed">
           {activeTab === "detailed"
-            ? `${triage.core_meaning || "Official document"} ${triage.action_instructions || ""} ${
-                triage.reference_id ? `Account / Reference ID: ${triage.reference_id}.` : ""
-              }`
-            : triage.core_meaning ||
-              "This is an official notice. You do not need to worry. Please verify through the official website or visit your nearest branch."}
+            ? `${triage.core_meaning || t.fallbackNotice} ${
+                triage.action_instructions ? ` Action: ${triage.action_instructions}` : ""
+              } ${triage.reference_id ? ` Ref ID: ${triage.reference_id}.` : ""}`
+            : triage.core_meaning || t.fallbackNotice}
         </p>
 
         {triage.action_instructions && activeTab === "summary" && (

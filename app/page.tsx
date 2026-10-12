@@ -5,6 +5,7 @@ import Image from "next/image";
 import { SupportedLanguage, NoticeTriageResult } from "@/lib/schema";
 import { Navbar } from "@/components/Navbar";
 import { TriageCard } from "@/components/TriageCard";
+import { LiveCameraModal } from "@/components/LiveCameraModal";
 import {
   Camera,
   Upload,
@@ -93,6 +94,17 @@ function getBadgeForResult(result: NoticeTriageResult): {
   text: string;
   type: "genuine" | "action_needed" | "scam" | "unclear";
 } {
+  const isNotDoc =
+    result.is_document === false ||
+    (!result.is_legible &&
+      result.document_type === "unknown" &&
+      !result.issuer_name &&
+      !result.amount_due &&
+      !result.deadline);
+
+  if (isNotDoc) {
+    return { text: "Not a Notice", type: "unclear" };
+  }
   if (result.scam_risk === "high_risk" || result.scam_risk === "warning") {
     return { text: "Potential Scam", type: "scam" };
   }
@@ -117,6 +129,7 @@ export default function LetterWiseApp() {
   const [selectedSampleId, setSelectedSampleId] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
+  const [showCameraModal, setShowCameraModal] = useState(false);
   const [fileType, setFileType] = useState<"image" | "pdf" | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
   const [pdfPages, setPdfPages] = useState<RenderedPdfPage[]>([]);
@@ -198,6 +211,14 @@ export default function LetterWiseApp() {
   }, []);
 
   const saveRealAnalysis = (result: NoticeTriageResult, thumbnail?: string) => {
+    const isNotDoc =
+      result.is_document === false ||
+      (!result.is_legible &&
+        result.document_type === "unknown" &&
+        !result.issuer_name &&
+        !result.amount_due &&
+        !result.deadline);
+
     const badge = getBadgeForResult(result);
     const newRecord: RealAnalysisRecord = {
       id: "scan_" + Date.now(),
@@ -207,10 +228,12 @@ export default function LetterWiseApp() {
         month: "short",
         year: "numeric",
       }).format(new Date()),
-      title: result.document_type
+      title: isNotDoc
+        ? "Unrecognized Photo"
+        : result.document_type && result.document_type !== "unknown"
         ? `${result.document_type.charAt(0).toUpperCase() + result.document_type.slice(1)} Notice`
-        : "Official Notice",
-      issuer: result.issuer_name || "Official Authority",
+        : "Official Document",
+      issuer: isNotDoc ? "No Notice Detected" : result.issuer_name || "Official Document",
       documentType: result.document_type,
       badge,
       result,
@@ -562,7 +585,7 @@ export default function LetterWiseApp() {
           <div className="grid grid-cols-2 gap-3.5 pt-0.5">
             <button
               type="button"
-              onClick={() => cameraInputRef.current?.click()}
+              onClick={() => setShowCameraModal(true)}
               className="flex items-center justify-center gap-2.5 py-4 px-3 rounded-2xl bg-white hover:bg-slate-50 border border-slate-200/90 text-slate-800 font-extrabold text-[15px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] active:scale-[0.98] transition-all cursor-pointer"
             >
               <Camera className="w-5 h-5 text-slate-800 stroke-[2.2]" />
@@ -666,7 +689,7 @@ export default function LetterWiseApp() {
               </p>
               <button
                 type="button"
-                onClick={() => cameraInputRef.current?.click()}
+                onClick={() => setShowCameraModal(true)}
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-blue-600 text-white font-bold text-xs shadow-sm hover:bg-blue-700 transition-all cursor-pointer"
               >
                 <Camera className="w-4 h-4" />
@@ -717,7 +740,7 @@ export default function LetterWiseApp() {
 
             <button
               type="button"
-              onClick={() => cameraInputRef.current?.click()}
+              onClick={() => setShowCameraModal(true)}
               className="flex flex-col items-center gap-1 text-slate-400 hover:text-[#2563EB] cursor-pointer"
             >
               <Scan className="w-6 h-6 stroke-[2]" />
@@ -730,7 +753,7 @@ export default function LetterWiseApp() {
                 if (realHistory.length > 0) {
                   handleSelectHistoryItem(realHistory[0]);
                 } else {
-                  cameraInputRef.current?.click();
+                  setShowCameraModal(true);
                 }
               }}
               className="flex flex-col items-center gap-1 text-slate-400 hover:text-[#2563EB] cursor-pointer"
@@ -812,6 +835,8 @@ export default function LetterWiseApp() {
                 }}
                 imageUrl={currentImage || undefined}
                 onLanguageChange={(newLang) => handleLanguageChange(newLang)}
+                onTakePhoto={() => setShowCameraModal(true)}
+                onUpload={() => fileInputRef.current?.click()}
                 documentMeta={
                   fileType === "pdf"
                     ? {
@@ -841,7 +866,7 @@ export default function LetterWiseApp() {
         <Navbar
           currentLanguage={language}
           onLanguageChange={(newLang) => handleLanguageChange(newLang)}
-          onScanClick={() => cameraInputRef.current?.click()}
+          onScanClick={() => setShowCameraModal(true)}
         />
 
         <main className="max-w-7xl mx-auto px-6 lg:px-8 w-full space-y-12 mt-8 mb-16">
@@ -870,7 +895,7 @@ export default function LetterWiseApp() {
 
                 <button
                   type="button"
-                  onClick={() => cameraInputRef.current?.click()}
+                  onClick={() => setShowCameraModal(true)}
                   className="flex items-center justify-center gap-2.5 px-7 py-4 rounded-2xl bg-white hover:bg-slate-50 border-2 border-slate-200 text-slate-800 font-bold text-base shadow-sm active:scale-98 transition-all cursor-pointer min-w-[180px]"
                 >
                   <Camera className="w-5 h-5 text-slate-600" strokeWidth={2.5} />
@@ -1044,6 +1069,8 @@ export default function LetterWiseApp() {
                 }}
                 imageUrl={currentImage || undefined}
                 onLanguageChange={(newLang) => handleLanguageChange(newLang)}
+                onTakePhoto={() => setShowCameraModal(true)}
+                onUpload={() => fileInputRef.current?.click()}
                 documentMeta={
                   fileType === "pdf"
                     ? {
@@ -1091,7 +1118,7 @@ export default function LetterWiseApp() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => cameraInputRef.current?.click()}
+                    onClick={() => setShowCameraModal(true)}
                     className="px-6 py-3 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 font-bold text-sm transition-all cursor-pointer"
                   >
                     Take Photo
@@ -1313,6 +1340,13 @@ export default function LetterWiseApp() {
           </div>
         </div>
       )}
+
+      {/* Live Camera Viewfinder Modal */}
+      <LiveCameraModal
+        isOpen={showCameraModal}
+        onClose={() => setShowCameraModal(false)}
+        onCapture={(file) => handleFileProcess(file)}
+      />
     </div>
   );
 }
