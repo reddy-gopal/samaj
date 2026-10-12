@@ -64,10 +64,10 @@ export const Navbar: React.FC<NavbarProps> = ({
             My Letters
           </a>
           <a
-            href="#safety"
+            href="#how-it-works"
             className="text-slate-600 hover:text-blue-600 transition-colors"
           >
-            Safety Tips
+            How It Works
           </a>
         </nav>
 

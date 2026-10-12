@@ -5,6 +5,7 @@ import Image from "next/image";
 import { SupportedLanguage, NoticeTriageResult } from "@/lib/schema";
 import { Navbar } from "@/components/Navbar";
 import { TriageCard } from "@/components/TriageCard";
+import { HowItWorks } from "@/components/HowItWorks";
 import {
   Camera,
   Upload,
@@ -26,6 +27,7 @@ import {
   Trash2,
   Inbox,
   FileSearch,
+  HelpCircle,
 } from "lucide-react";
 import { processPdfClientSide, RenderedPdfPage } from "@/lib/pdf";
 
@@ -594,6 +596,11 @@ export default function LetterWiseApp() {
               ))}
             </div>
           )}
+
+          {/* Mobile How It Works Section */}
+          <div className="pt-4 pb-2">
+            <HowItWorks onScanClick={() => cameraInputRef.current?.click()} />
+          </div>
         </div>
 
         {/* Mobile Fixed Bottom Navigation */}
@@ -632,19 +639,13 @@ export default function LetterWiseApp() {
               <span className="text-[11px] font-bold tracking-tight">My Letters</span>
             </button>
 
-            <button
-              type="button"
-              onClick={() => setShowLanguageModal(true)}
+            <a
+              href="#how-it-works"
               className="flex flex-col items-center gap-1 text-slate-400 hover:text-[#2563EB] cursor-pointer"
             >
-              <div className="w-6 h-6 flex items-center justify-center">
-                <svg className="w-5 h-5 stroke-current fill-none" viewBox="0 0 24 24" strokeWidth="2">
-                  <path d="M12 2L3 7v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-9-5z" />
-                  <path d="M9 12l2 2 4-4" />
-                </svg>
-              </div>
-              <span className="text-[11px] font-bold tracking-tight">Learn</span>
-            </button>
+              <HelpCircle className="w-6 h-6 stroke-[2]" />
+              <span className="text-[11px] font-bold tracking-tight">How It Works</span>
+            </a>
           </div>
           <div className="w-32 h-1 bg-slate-900 rounded-full mx-auto mt-2"></div>
         </nav>
@@ -852,6 +853,9 @@ export default function LetterWiseApp() {
               </div>
             </div>
           </section>
+
+          {/* Desktop How It Works Section */}
+          <HowItWorks onScanClick={() => fileInputRef.current?.click()} />
 
           {/* Real Inspection Section on Desktop */}
           <div id="analysis-section" className="space-y-4">
