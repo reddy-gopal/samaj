@@ -54,12 +54,12 @@ export async function POST(req: NextRequest) {
       ? image.split("base64,")[1]
       : image;
 
-    // Validate size limit (8 MB max)
+    // Validate size limit (15 MB max for PDFs / images)
     const approximateSizeBytes = (base64Data.length * 3) / 4;
-    const maxSizeBytes = 8 * 1024 * 1024;
+    const maxSizeBytes = 15 * 1024 * 1024;
     if (approximateSizeBytes > maxSizeBytes) {
       return NextResponse.json(
-        { error: "Image exceeds 8 MB size limit. Please upload a smaller photo." },
+        { error: "Document exceeds 15 MB size limit. Please upload a smaller file." },
         { status: 413 }
       );
     }
@@ -76,36 +76,51 @@ export async function POST(req: NextRequest) {
     const ai = new GoogleGenAI({ apiKey });
     const systemPrompt = getTriageSystemPrompt(language);
 
-    // OPEN-WEIGHT MODELS ONLY:
-    // Uses Google's open-weight Gemma 4 models through the Gemini API.
-    // - gemma-4-26b-a4b-it: Fast, highly responsive open-weight multimodal model (~4s)
-    // - gemma-4-31b-it: Full 31B open-weight model candidate
-    const candidateModels = process.env.GEMINI_MODEL
-      ? [process.env.GEMINI_MODEL, "gemma-4-26b-a4b-it", "gemma-4-31b-it"]
-      : ["gemma-4-26b-a4b-it", "gemma-4-31b-it"];
+    const isPdf = mimeType === "application/pdf";
+
+    // MODEL SELECTION:
+    // - For images: prioritizes open-weight Gemma 4 models (gemma-4-26b-a4b-it, gemma-4-31b-it)
+    // - For raw PDF documents: uses native PDF processing models (gemini-3.8-flash, gemini-2.5-flash)
+    const candidateModels = isPdf
+      ? (process.env.GEMINI_PDF_MODEL
+          ? [process.env.GEMINI_PDF_MODEL, "gemini-3.8-flash", "gemini-2.5-flash", "gemini-flash-latest"]
+          : ["gemini-3.8-flash", "gemini-2.5-flash", "gemini-flash-latest"])
+      : (process.env.GEMINI_MODEL
+          ? [process.env.GEMINI_MODEL, "gemma-4-26b-a4b-it", "gemma-4-31b-it"]
+          : ["gemma-4-26b-a4b-it", "gemma-4-31b-it"]);
 
     let lastError: unknown = null;
     let validatedResult: NoticeTriageResult | null = null;
 
+    const promptText = isPdf
+      ? "Please analyze this official notice / letter PDF document according to the system instructions and return the structured triage JSON."
+      : "Please analyze this physical notice image according to the system instructions and return the structured triage JSON.";
+
+    const contentParts: Array<{ text?: string; inlineData?: { mimeType: string; data: string } }> = [
+      { text: promptText },
+      {
+        inlineData: {
+          mimeType,
+          data: base64Data,
+        },
+      },
+    ];
+
+    if (parsedBody.data.extractedText && parsedBody.data.extractedText.trim().length > 0) {
+      contentParts.push({
+        text: `Extracted text from document:\n${parsedBody.data.extractedText.slice(0, 12000)}`,
+      });
+    }
+
     for (const modelName of candidateModels) {
       try {
-        console.log(`[Notice Explainer] Invoking open-weight model: ${modelName}...`);
+        console.log(`[Notice Explainer] Invoking model: ${modelName} (${isPdf ? "PDF" : "Image"})...`);
         const response = await ai.models.generateContent({
           model: modelName,
           contents: [
             {
               role: "user",
-              parts: [
-                {
-                  text: "Please analyze this physical notice image according to the system instructions and return the structured triage JSON.",
-                },
-                {
-                  inlineData: {
-                    mimeType,
-                    data: base64Data,
-                  },
-                },
-              ],
+              parts: contentParts,
             },
           ],
           config: {

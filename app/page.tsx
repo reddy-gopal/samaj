@@ -23,6 +23,7 @@ import {
   BookOpen,
   RefreshCw,
 } from "lucide-react";
+import { processPdfClientSide, RenderedPdfPage } from "@/lib/pdf";
 
 // Client-side image compression for Gemma 4
 async function compressImageClientSide(file: File): Promise<{ base64: string; mimeType: "image/jpeg" }> {
@@ -71,39 +72,112 @@ async function compressImageClientSide(file: File): Promise<{ base64: string; mi
 export default function HomePage() {
   const [language, setLanguage] = useState<SupportedLanguage>("en");
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState<string>("Analyzing your letter...");
   const [triageResult, setTriageResult] = useState<NoticeTriageResult>(
     SAMPLE_NOTICES[0].sampleResults["en"] // Default initial demo inspection card matching mockup (SBI notice)
   );
   const [currentImage, setCurrentImage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [fileType, setFileType] = useState<"image" | "pdf" | null>(null);
+  const [fileName, setFileName] = useState<string | null>(null);
+  const [pdfPages, setPdfPages] = useState<RenderedPdfPage[]>([]);
+  const [currentPageIndex, setCurrentPageIndex] = useState<number>(1);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
+  const handlePageChange = (newPage: number) => {
+    const page = pdfPages.find((p) => p.pageNumber === newPage);
+    if (page) {
+      setCurrentPageIndex(newPage);
+      setCurrentImage(page.dataUrl);
+    }
+  };
+
   const handleFileProcess = async (file: File) => {
     setIsLoading(true);
     setErrorMessage(null);
+    setFileName(file.name);
+
+    const isPdf =
+      file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
 
     try {
-      const { base64, mimeType } = await compressImageClientSide(file);
-      setCurrentImage(base64);
+      if (isPdf) {
+        setFileType("pdf");
+        setLoadingMessage("Reading & rendering PDF document...");
 
-      const response = await fetch("/api/explain", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          image: base64,
-          mimeType,
-          language,
-        }),
-      });
+        const processed = await processPdfClientSide(file);
+        setPdfPages(processed.pages);
+        setCurrentPageIndex(1);
 
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to analyze notice");
+        if (processed.isRawPdf) {
+          // If browser canvas was unavailable, send raw PDF
+          setLoadingMessage("Analyzing PDF with AI engine...");
+          const response = await fetch("/api/explain", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              image: processed.firstPageImage,
+              mimeType: "application/pdf",
+              language,
+              extractedText: "",
+            }),
+          });
+          const data = await response.json();
+          if (!response.ok) {
+            throw new Error(data.error || "Failed to analyze PDF document");
+          }
+          setTriageResult(data as NoticeTriageResult);
+        } else {
+          // Rendered page image available! Gemma 4 inspects it as crisp JPEG
+          setCurrentImage(processed.firstPageImage);
+          setLoadingMessage("Gemma 4 is analyzing your letter...");
+
+          const response = await fetch("/api/explain", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              image: processed.firstPageImage,
+              mimeType: "image/jpeg",
+              language,
+              extractedText: processed.extractedText,
+            }),
+          });
+
+          const data = await response.json();
+          if (!response.ok) {
+            throw new Error(data.error || "Failed to analyze PDF document");
+          }
+          setTriageResult(data as NoticeTriageResult);
+        }
+      } else {
+        setFileType("image");
+        setPdfPages([]);
+        setCurrentPageIndex(1);
+        setLoadingMessage("Compressing & preparing image...");
+
+        const { base64, mimeType } = await compressImageClientSide(file);
+        setCurrentImage(base64);
+
+        setLoadingMessage("Gemma 4 is analyzing your letter...");
+        const response = await fetch("/api/explain", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            image: base64,
+            mimeType,
+            language,
+          }),
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || "Failed to analyze notice");
+        }
+
+        setTriageResult(data as NoticeTriageResult);
       }
-
-      setTriageResult(data as NoticeTriageResult);
 
       // Scroll to inspection card
       document.getElementById("analysis-section")?.scrollIntoView({ behavior: "smooth" });
@@ -112,6 +186,7 @@ export default function HomePage() {
       setErrorMessage(err instanceof Error ? err.message : "Failed to analyze notice");
     } finally {
       setIsLoading(false);
+      setLoadingMessage("Analyzing your letter...");
     }
   };
 
@@ -119,6 +194,10 @@ export default function HomePage() {
     setErrorMessage(null);
     setTriageResult(sample.sampleResults[language]);
     setCurrentImage(null);
+    setFileName(null);
+    setFileType(null);
+    setPdfPages([]);
+    setCurrentPageIndex(1);
     document.getElementById("analysis-section")?.scrollIntoView({ behavior: "smooth" });
   };
 
@@ -146,7 +225,7 @@ export default function HomePage() {
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp"
+        accept="image/jpeg,image/png,image/webp,application/pdf,.pdf"
         className="hidden"
         onChange={(e) => e.target.files?.[0] && handleFileProcess(e.target.files[0])}
       />
@@ -184,7 +263,7 @@ export default function HomePage() {
           <div className="bg-white rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-slate-100 space-y-4">
             <RefreshCw className="w-12 h-12 text-blue-600 animate-spin mx-auto" />
             <h3 className="text-lg font-black text-slate-900">
-              Gemma 4 is analyzing your letter...
+              {loadingMessage}
             </h3>
             <p className="text-xs text-slate-500 font-medium leading-relaxed">
               Reading official text, checking safety badges, and extracting immediate actions.
@@ -208,15 +287,15 @@ export default function HomePage() {
               Upload or take a photo of any official letter. Know what it is, whether it’s safe, and what to do next in simple English, Telugu or Hindi.
             </p>
 
-            {/* Dual Action Buttons */}
+            {/* Dual Action Buttons (Upload Photo / PDF & Camera) */}
             <div className="flex flex-wrap items-center gap-4 pt-2">
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="flex items-center justify-center gap-2.5 px-6 py-4 rounded-2xl bg-blue-600 hover:bg-blue-700 active:scale-98 text-white font-bold text-base shadow-lg shadow-blue-500/25 transition-all cursor-pointer min-w-[170px]"
+                className="flex items-center justify-center gap-2.5 px-6 py-4 rounded-2xl bg-blue-600 hover:bg-blue-700 active:scale-98 text-white font-bold text-base shadow-lg shadow-blue-500/25 transition-all cursor-pointer min-w-[190px]"
               >
                 <Upload className="w-5 h-5" strokeWidth={2.5} />
-                <span>Upload Letter</span>
+                <span>Upload Letter / PDF</span>
               </button>
 
               <button
@@ -231,7 +310,7 @@ export default function HomePage() {
 
             {/* Tagline */}
             <p className="text-xs sm:text-sm font-semibold text-slate-400 pt-1">
-              Supports: Bank • Government • Electricity • Insurance • More
+              Supports: PDF Documents (.pdf) • Camera Photos • Bank • Electricity • Tax • Summons
             </p>
           </div>
 
@@ -360,9 +439,29 @@ export default function HomePage() {
             onReset={() => {
               setTriageResult(SAMPLE_NOTICES[0].sampleResults[language]);
               setCurrentImage(null);
+              setFileName(null);
+              setFileType(null);
+              setPdfPages([]);
+              setCurrentPageIndex(1);
             }}
             imageUrl={currentImage || undefined}
             onLanguageChange={handleLanguageChange}
+            documentMeta={
+              fileType === "pdf"
+                ? {
+                    fileName: fileName || "Document.pdf",
+                    fileType: "pdf",
+                    currentPage: currentPageIndex,
+                    totalPages: pdfPages.length > 0 ? pdfPages.length : 1,
+                    onPageChange: handlePageChange,
+                  }
+                : fileName
+                ? {
+                    fileName: fileName,
+                    fileType: "image",
+                  }
+                : undefined
+            }
           />
         </div>
 
