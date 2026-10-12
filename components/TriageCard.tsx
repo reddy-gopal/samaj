@@ -25,7 +25,17 @@ import {
   Hash,
   Camera,
   Upload,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
+
+export interface DocumentMeta {
+  fileName?: string;
+  fileType?: "image" | "pdf";
+  currentPage?: number;
+  totalPages?: number;
+  onPageChange?: (newPage: number) => void;
+}
 
 interface TriageCardProps {
   triage: NoticeTriageResult;
@@ -35,6 +45,7 @@ interface TriageCardProps {
   onLanguageChange?: (lang: SupportedLanguage) => void;
   onTakePhoto?: () => void;
   onUpload?: () => void;
+  documentMeta?: DocumentMeta;
 }
 
 export const TriageCard: React.FC<TriageCardProps> = ({
@@ -45,6 +56,7 @@ export const TriageCard: React.FC<TriageCardProps> = ({
   onLanguageChange,
   onTakePhoto,
   onUpload,
+  documentMeta,
 }) => {
   const t = TRANSLATIONS[language];
   const [activeTab, setActiveTab] = useState<"summary" | "detailed" | "telugu" | "hindi">("summary");
@@ -263,7 +275,7 @@ export const TriageCard: React.FC<TriageCardProps> = ({
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={imageUrl}
-                alt="Scanned letter preview"
+                alt={documentMeta?.fileName || "Scanned letter preview"}
                 className="w-full h-full object-contain rounded-xl"
               />
             ) : (
@@ -278,10 +290,61 @@ export const TriageCard: React.FC<TriageCardProps> = ({
                 </div>
               </div>
             )}
-            <span className="absolute bottom-3 text-[10px] font-bold bg-slate-900/80 text-white px-2.5 py-1 rounded-full backdrop-blur-xs">
-              Analyzed Image
+            <span className="absolute bottom-3 text-[10px] font-bold bg-slate-900/80 text-white px-2.5 py-1 rounded-full backdrop-blur-xs flex items-center gap-1.5 shadow-sm">
+              {documentMeta?.fileType === "pdf" ? (
+                <>
+                  <FileText className="w-3 h-3 text-red-400" />
+                  <span>
+                    PDF • Page {documentMeta.currentPage || 1} of {documentMeta.totalPages || 1}
+                  </span>
+                </>
+              ) : (
+                <span>Analyzed Image</span>
+              )}
             </span>
           </div>
+
+          {/* PDF Page Navigation & File Information */}
+          {documentMeta?.fileType === "pdf" && (
+            <div className="w-full max-w-[240px] mt-2 flex flex-col items-center gap-1">
+              {documentMeta.fileName && (
+                <span className="text-[11px] font-semibold text-slate-500 truncate max-w-full px-1">
+                  {documentMeta.fileName}
+                </span>
+              )}
+              {documentMeta.totalPages && documentMeta.totalPages > 1 && documentMeta.onPageChange && (
+                <div className="flex items-center gap-2 mt-1">
+                  <button
+                    type="button"
+                    disabled={(documentMeta.currentPage || 1) <= 1}
+                    onClick={() =>
+                      documentMeta.onPageChange?.(Math.max(1, (documentMeta.currentPage || 1) - 1))
+                    }
+                    className="p-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed text-slate-700 shadow-2xs transition-colors cursor-pointer"
+                    aria-label="Previous Page"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <span className="text-xs font-bold text-slate-600">
+                    {documentMeta.currentPage || 1} / {documentMeta.totalPages}
+                  </span>
+                  <button
+                    type="button"
+                    disabled={(documentMeta.currentPage || 1) >= documentMeta.totalPages}
+                    onClick={() =>
+                      documentMeta.onPageChange?.(
+                        Math.min(documentMeta.totalPages || 1, (documentMeta.currentPage || 1) + 1)
+                      )
+                    }
+                    className="p-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed text-slate-700 shadow-2xs transition-colors cursor-pointer"
+                    aria-label="Next Page"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Center Column: Status Banner & Specs Table */}

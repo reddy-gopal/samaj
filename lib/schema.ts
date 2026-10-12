@@ -56,9 +56,10 @@ export const NoticeTriageSchema = z.object({
 export type NoticeTriageResult = z.infer<typeof NoticeTriageSchema>;
 
 export const TriageRequestSchema = z.object({
-  image: z.string().min(1, "Image data is required"), // base64 string or data url
-  mimeType: z.enum(["image/jpeg", "image/png", "image/webp"]),
+  image: z.string().min(1, "Image or document data is required"), // base64 string or data url
+  mimeType: z.enum(["image/jpeg", "image/png", "image/webp", "application/pdf"]),
   language: SupportedLanguageSchema.default("en"),
+  extractedText: z.string().optional(),
 });
 
 export type TriageRequest = z.infer<typeof TriageRequestSchema>;
