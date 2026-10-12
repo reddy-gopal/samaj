@@ -28,6 +28,7 @@ import {
   FileSearch,
 } from "lucide-react";
 import { processPdfClientSide, RenderedPdfPage } from "@/lib/pdf";
+import { SAMPLE_NOTICES, SampleNoticeItem } from "@/lib/samples";
 
 export interface RealAnalysisRecord {
   id: string;
@@ -112,6 +113,9 @@ export default function LetterWiseApp() {
   const [currentImage, setCurrentImage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showLanguageModal, setShowLanguageModal] = useState(false);
+  const [showSafetyModal, setShowSafetyModal] = useState(false);
+  const [selectedSampleId, setSelectedSampleId] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
   const [fileType, setFileType] = useState<"image" | "pdf" | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
@@ -123,6 +127,52 @@ export default function LetterWiseApp() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+
+  const handleLanguageChange = (newLang: SupportedLanguage) => {
+    setLanguage(newLang);
+    if (selectedSampleId) {
+      const found = SAMPLE_NOTICES.find((s) => s.id === selectedSampleId);
+      if (found && found.sampleResults[newLang]) {
+        setTriageResult(found.sampleResults[newLang]);
+      }
+    }
+  };
+
+  const handleSelectSample = (sample: SampleNoticeItem) => {
+    setErrorMessage(null);
+    setSelectedSampleId(sample.id);
+    const res = sample.sampleResults[language] || sample.sampleResults.en;
+    setTriageResult(res);
+    setCurrentImage(null);
+    setFileName(sample.title);
+    setFileType(null);
+    setPdfPages([]);
+    setCurrentPageIndex(1);
+    setMobileDetailOpen(true);
+    document.getElementById("analysis-section")?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      handleFileProcess(files[0]);
+    }
+  };
 
   const handlePageChange = (newPage: number) => {
     const page = pdfPages.find((p) => p.pageNumber === newPage);
@@ -188,6 +238,7 @@ export default function LetterWiseApp() {
   const handleFileProcess = async (file: File) => {
     setIsLoading(true);
     setErrorMessage(null);
+    setSelectedSampleId(null);
     setFileName(file.name);
 
     const isPdf =
@@ -295,6 +346,7 @@ export default function LetterWiseApp() {
 
   const handleSelectHistoryItem = (record: RealAnalysisRecord) => {
     setErrorMessage(null);
+    setSelectedSampleId(null);
     setTriageResult(record.result);
     setCurrentImage(record.imageThumbnail || null);
     setFileName(record.title);
@@ -527,6 +579,61 @@ export default function LetterWiseApp() {
             </button>
           </div>
 
+          {/* Quick Demo Samples Carousel */}
+          <section className="space-y-2.5 pt-1">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4 text-blue-600" />
+                <h2 className="text-[16px] font-black text-slate-900 tracking-tight">
+                  Try Sample Letters
+                </h2>
+              </div>
+              <span className="text-[11px] font-bold text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-100">
+                8 Demo Letters
+              </span>
+            </div>
+
+            <div className="flex gap-3 overflow-x-auto pb-2 pt-0.5 -mx-5 px-5 scrollbar-none">
+              {SAMPLE_NOTICES.map((sample) => (
+                <button
+                  key={sample.id}
+                  type="button"
+                  onClick={() => handleSelectSample(sample)}
+                  className={`shrink-0 w-48 p-3.5 rounded-2xl bg-white border text-left space-y-2 transition-all cursor-pointer active:scale-95 shadow-2xs ${
+                    selectedSampleId === sample.id
+                      ? "border-blue-600 ring-2 ring-blue-500/20"
+                      : "border-slate-200 hover:border-blue-300"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    {renderCategoryIcon(sample.category)}
+                    <span
+                      className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
+                        sample.badgeType === "scam"
+                          ? "bg-red-100 text-red-800"
+                          : sample.badgeType === "fallback"
+                          ? "bg-amber-100 text-amber-900"
+                          : sample.badgeType === "legal"
+                          ? "bg-blue-100 text-blue-800"
+                          : "bg-emerald-100 text-emerald-800"
+                      }`}
+                    >
+                      {sample.badge}
+                    </span>
+                  </div>
+                  <div>
+                    <h3 className="font-extrabold text-[13px] text-slate-900 line-clamp-1">
+                      {sample.title}
+                    </h3>
+                    <p className="text-[11px] text-slate-500 font-medium line-clamp-2 mt-0.5">
+                      {sample.description}
+                    </p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </section>
+
           {/* Section: Recent Analysis */}
           <div className="flex items-center justify-between pt-2 pb-0.5">
             <h2 className="text-[19px] font-black text-slate-900 tracking-tight">
@@ -634,7 +741,7 @@ export default function LetterWiseApp() {
 
             <button
               type="button"
-              onClick={() => setShowLanguageModal(true)}
+              onClick={() => setShowSafetyModal(true)}
               className="flex flex-col items-center gap-1 text-slate-400 hover:text-[#2563EB] cursor-pointer"
             >
               <div className="w-6 h-6 flex items-center justify-center">
@@ -667,21 +774,21 @@ export default function LetterWiseApp() {
               <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-full text-xs font-bold">
                 <button
                   type="button"
-                  onClick={() => setLanguage("en")}
+                  onClick={() => handleLanguageChange("en")}
                   className={`px-2 py-0.5 rounded-full ${language === "en" ? "bg-white text-blue-600 shadow-2xs font-extrabold" : "text-slate-600"}`}
                 >
                   EN
                 </button>
                 <button
                   type="button"
-                  onClick={() => setLanguage("te")}
+                  onClick={() => handleLanguageChange("te")}
                   className={`px-2 py-0.5 rounded-full ${language === "te" ? "bg-white text-blue-600 shadow-2xs font-extrabold" : "text-slate-600"}`}
                 >
                   తెలుగు
                 </button>
                 <button
                   type="button"
-                  onClick={() => setLanguage("hi")}
+                  onClick={() => handleLanguageChange("hi")}
                   className={`px-2 py-0.5 rounded-full ${language === "hi" ? "bg-white text-blue-600 shadow-2xs font-extrabold" : "text-slate-600"}`}
                 >
                   हिन्दी
@@ -695,6 +802,7 @@ export default function LetterWiseApp() {
                 language={language}
                 onReset={() => {
                   setTriageResult(null);
+                  setSelectedSampleId(null);
                   setCurrentImage(null);
                   setFileName(null);
                   setFileType(null);
@@ -703,7 +811,7 @@ export default function LetterWiseApp() {
                   setMobileDetailOpen(false);
                 }}
                 imageUrl={currentImage || undefined}
-                onLanguageChange={(newLang) => setLanguage(newLang)}
+                onLanguageChange={(newLang) => handleLanguageChange(newLang)}
                 documentMeta={
                   fileType === "pdf"
                     ? {
@@ -732,7 +840,7 @@ export default function LetterWiseApp() {
       <div className="hidden md:flex flex-col min-h-screen">
         <Navbar
           currentLanguage={language}
-          onLanguageChange={(newLang) => setLanguage(newLang)}
+          onLanguageChange={(newLang) => handleLanguageChange(newLang)}
           onScanClick={() => cameraInputRef.current?.click()}
         />
 
@@ -853,6 +961,63 @@ export default function LetterWiseApp() {
             </div>
           </section>
 
+          {/* Desktop Sample Notices Section */}
+          <section className="space-y-4 pt-2">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+                  Try Sample Notices
+                </h2>
+                <p className="text-sm font-medium text-slate-500 mt-1">
+                  Click any verified or suspicious notice below to test Gemma 4 triage, regional voice synthesis, and scam warnings instantly.
+                </p>
+              </div>
+              <span className="text-xs font-bold px-3 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                8 Preloaded Scenarios
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              {SAMPLE_NOTICES.map((sample) => (
+                <button
+                  key={sample.id}
+                  type="button"
+                  onClick={() => handleSelectSample(sample)}
+                  className={`p-4 rounded-2xl bg-white border text-left space-y-3 transition-all cursor-pointer shadow-2xs hover:shadow-md group ${
+                    selectedSampleId === sample.id
+                      ? "border-blue-600 ring-2 ring-blue-500/20"
+                      : "border-slate-200/90 hover:border-blue-400"
+                  }`}
+                >
+                  <div className="flex items-start justify-between">
+                    {renderCategoryIcon(sample.category)}
+                    <span
+                      className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full ${
+                        sample.badgeType === "scam"
+                          ? "bg-red-100 text-red-800"
+                          : sample.badgeType === "fallback"
+                          ? "bg-amber-100 text-amber-900"
+                          : sample.badgeType === "legal"
+                          ? "bg-blue-100 text-blue-800"
+                          : "bg-emerald-100 text-emerald-800"
+                      }`}
+                    >
+                      {sample.badge}
+                    </span>
+                  </div>
+                  <div>
+                    <h3 className="font-extrabold text-sm text-slate-900 group-hover:text-blue-600 transition-colors">
+                      {sample.title}
+                    </h3>
+                    <p className="text-xs text-slate-500 font-medium mt-1 leading-relaxed line-clamp-2">
+                      {sample.description}
+                    </p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </section>
+
           {/* Real Inspection Section on Desktop */}
           <div id="analysis-section" className="space-y-4">
             <div className="flex items-center justify-between">
@@ -870,6 +1035,7 @@ export default function LetterWiseApp() {
                 language={language}
                 onReset={() => {
                   setTriageResult(null);
+                  setSelectedSampleId(null);
                   setCurrentImage(null);
                   setFileName(null);
                   setFileType(null);
@@ -877,7 +1043,7 @@ export default function LetterWiseApp() {
                   setCurrentPageIndex(1);
                 }}
                 imageUrl={currentImage || undefined}
-                onLanguageChange={(newLang) => setLanguage(newLang)}
+                onLanguageChange={(newLang) => handleLanguageChange(newLang)}
                 documentMeta={
                   fileType === "pdf"
                     ? {
@@ -896,7 +1062,16 @@ export default function LetterWiseApp() {
                 }
               />
             ) : (
-              <div className="w-full p-12 rounded-3xl bg-white border-2 border-dashed border-slate-200 text-center space-y-4 shadow-sm">
+              <div
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                className={`w-full p-12 rounded-3xl bg-white border-2 border-dashed text-center space-y-4 shadow-sm transition-colors ${
+                  isDragging
+                    ? "border-blue-500 bg-blue-50/50"
+                    : "border-slate-200"
+                }`}
+              >
                 <div className="w-16 h-16 rounded-3xl bg-blue-50 text-blue-600 mx-auto flex items-center justify-center">
                   <Upload className="w-8 h-8" />
                 </div>
@@ -904,7 +1079,7 @@ export default function LetterWiseApp() {
                   Ready to Inspect Your Letter
                 </h3>
                 <p className="text-sm font-medium text-slate-500 max-w-md mx-auto leading-relaxed">
-                  Upload an official letter or take a photo with your camera. Gemma 4 will extract the key meaning, verify scam indicators, and provide step-by-step guidance.
+                  Drag &amp; drop an official letter or PDF, or select an option below. Gemma 4 will extract the key meaning, verify scam indicators, and provide step-by-step guidance.
                 </p>
                 <div className="flex items-center justify-center gap-3 pt-2">
                   <button
@@ -912,7 +1087,7 @@ export default function LetterWiseApp() {
                     onClick={() => fileInputRef.current?.click()}
                     className="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-sm transition-all cursor-pointer"
                   >
-                    Upload Letter
+                    Upload Letter or PDF
                   </button>
                   <button
                     type="button"
@@ -971,6 +1146,66 @@ export default function LetterWiseApp() {
               </div>
             )}
           </section>
+
+          {/* Desktop Safety Tips & Scam Shield Section */}
+          <section id="safety" className="space-y-6 pt-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+                  Safety Tips &amp; Scam Shield Rules
+                </h2>
+                <p className="text-sm font-medium text-slate-500 mt-1">
+                  How to protect yourself and your family from deceptive notices, extortion, and phishing.
+                </p>
+              </div>
+              <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200">
+                <ShieldCheck className="w-4 h-4" />
+                <span>Zero Compromise Security</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-2xs space-y-2.5">
+                <div className="w-10 h-10 rounded-xl bg-red-100 text-red-600 flex items-center justify-center font-black">
+                  1
+                </div>
+                <h3 className="font-extrabold text-slate-900 text-base">Never Share OTP or PIN</h3>
+                <p className="text-xs text-slate-600 font-medium leading-relaxed">
+                  No genuine bank, electricity distribution board, or court official will ever ask for OTP, ATM PIN, or card CVV over call, letter, or WhatsApp.
+                </p>
+              </div>
+
+              <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-2xs space-y-2.5">
+                <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center font-black">
+                  2
+                </div>
+                <h3 className="font-extrabold text-slate-900 text-base">Beware Personal UPI IDs</h3>
+                <p className="text-xs text-slate-600 font-medium leading-relaxed">
+                  Government departments and utilities never accept bill payments via personal UPI handles (e.g. @ybl, @paytm) or individual mobile numbers.
+                </p>
+              </div>
+
+              <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-2xs space-y-2.5">
+                <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center font-black">
+                  3
+                </div>
+                <h3 className="font-extrabold text-slate-900 text-base">Verify on Official Portals</h3>
+                <p className="text-xs text-slate-600 font-medium leading-relaxed">
+                  Always look up the toll-free customer care number from your previous genuine bill or visit the official .gov.in or bank domain directly.
+                </p>
+              </div>
+
+              <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-2xs space-y-2.5">
+                <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center font-black">
+                  4
+                </div>
+                <h3 className="font-extrabold text-slate-900 text-base">Consult Family First</h3>
+                <p className="text-xs text-slate-600 font-medium leading-relaxed">
+                  Use LetterWise&apos;s 1-tap WhatsApp share button to send the plain-language summary to a trusted child, relative, or advisor before acting.
+                </p>
+              </div>
+            </div>
+          </section>
         </main>
       </div>
 
@@ -999,7 +1234,7 @@ export default function LetterWiseApp() {
                   key={item.code}
                   type="button"
                   onClick={() => {
-                    setLanguage(item.code as SupportedLanguage);
+                    handleLanguageChange(item.code as SupportedLanguage);
                     setShowLanguageModal(false);
                   }}
                   className={`w-full flex items-center justify-between p-3.5 rounded-2xl border text-left transition-all cursor-pointer ${
@@ -1016,6 +1251,65 @@ export default function LetterWiseApp() {
                 </button>
               ))}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile Safety Tips & Scam Shield Modal */}
+      {showSafetyModal && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-5 animate-in fade-in duration-150">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-sm space-y-4 shadow-2xl max-h-[85vh] overflow-y-auto">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Shield className="w-5 h-5 text-blue-600" />
+                <h3 className="font-extrabold text-base text-slate-900">Safety &amp; Scam Shield</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowSafetyModal(false)}
+                className="p-1 text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div className="p-3.5 rounded-2xl bg-red-50 border border-red-200 space-y-1">
+                <span className="font-black text-red-700 block">1. Never Share OTP or PIN</span>
+                <p className="text-red-950 font-medium leading-relaxed">
+                  No bank or government department ever asks for OTP, ATM PIN, or card CVV over SMS, phone, or letter.
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 space-y-1">
+                <span className="font-black text-amber-800 block">2. Beware Personal UPI IDs</span>
+                <p className="text-amber-950 font-medium leading-relaxed">
+                  Never pay electricity or tax dues to personal UPI handles (@ybl, @paytm, @okaxis) or mobile numbers.
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-blue-50 border border-blue-200 space-y-1">
+                <span className="font-black text-blue-800 block">3. Artificial Urgency = Scam</span>
+                <p className="text-blue-950 font-medium leading-relaxed">
+                  Threats of immediate power cutoff tonight or immediate arrest are extortion traps. Verify with past bill.
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                <span className="font-black text-slate-800 block">4. Share with Family</span>
+                <p className="text-slate-600 font-medium leading-relaxed">
+                  Use the WhatsApp button in LetterWise to send the summary to trusted family before making any payment.
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowSafetyModal(false)}
+              className="w-full py-3 rounded-xl bg-blue-600 text-white font-bold text-xs shadow-sm hover:bg-blue-700 transition-all cursor-pointer"
+            >
+              Understood
+            </button>
           </div>
         </div>
       )}
