@@ -225,7 +225,7 @@ GEMINI_MODEL=gemma-4-26b-a4b-it
 ## 🔒 Safety Limitations & Disclaimer
 
 - **Not Legal Advice**: This application provides automated plain-language summaries and safety triage only. It does not provide legal representation, statutory interpretation, or binding counsel.
-- **No Direct Verification**: Notice Explainer cannot authenticate physical stamps or government seals. Always contact the official department using the verified contact details on their official `.gov.in` portal or a previous physical bill.
+- **No Direct Verification**: Samaj cannot authenticate physical stamps or government seals. Always contact the official department using the verified contact details on their official `.gov.in` portal or a previous physical bill.
 - **Privacy Assurance**: Images are processed in-memory and are never permanently stored on servers or cloud databases.
 
 ---
