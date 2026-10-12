@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { NoticeTriageResult, SupportedLanguage } from "@/lib/schema";
 import { TRANSLATIONS } from "@/lib/languages";
+import { VoiceNarrator } from "@/components/VoiceNarrator";
 import {
   ShieldCheck,
   ShieldAlert,
@@ -14,14 +15,13 @@ import {
   CheckCircle2,
   ExternalLink,
   Lock,
-  Volume2,
-  VolumeX,
   MessageCircle,
   RefreshCw,
   Sparkles,
   HelpCircle,
   Clock,
   Banknote,
+  Volume2,
 } from "lucide-react";
 
 interface TriageCardProps {
@@ -41,56 +41,33 @@ export const TriageCard: React.FC<TriageCardProps> = ({
 }) => {
   const t = TRANSLATIONS[language];
   const [activeTab, setActiveTab] = useState<"summary" | "detailed" | "telugu" | "hindi">("summary");
-  const [isSpeaking, setIsSpeaking] = useState(false);
-
-  useEffect(() => {
-    return () => {
-      if (typeof window !== "undefined" && "speechSynthesis" in window) {
-        window.speechSynthesis.cancel();
-      }
-    };
-  }, []);
 
   const isScam = triage.scam_risk !== "none_detected";
   const isFallback =
     !triage.is_legible || triage.immediate_action === "unclear" || triage.confidence === "low";
 
-  const handleSpeak = () => {
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
-
-    if (isSpeaking) {
-      window.speechSynthesis.cancel();
-      setIsSpeaking(false);
-      return;
-    }
-
-    window.speechSynthesis.cancel();
-    const textToSpeak = triage.core_meaning || triage.action_instructions || "Notice summary";
-    const utterance = new SpeechSynthesisUtterance(textToSpeak);
-
-    if (language === "te") utterance.lang = "te-IN";
-    else if (language === "hi") utterance.lang = "hi-IN";
-    else utterance.lang = "en-IN";
-
-    utterance.rate = 0.95;
-    utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
-
-    window.speechSynthesis.speak(utterance);
-  };
+  // Text compiled for voice narration in current language
+  const narrationText = [
+    triage.core_meaning,
+    triage.action_instructions ? `${t.resultHeadingAction}: ${triage.action_instructions}` : null,
+    triage.deadline ? `${t.deadlineLabel}: ${triage.deadline}` : null,
+    triage.amount_due ? `${t.amountLabel}: ${triage.amount_due}` : null,
+    isScam ? `${t.scamAlertTitle}. ${t.scamShieldPoints.noOtp}` : null,
+  ]
+    .filter(Boolean)
+    .join(". ");
 
   const handleWhatsAppShare = () => {
     const lines = [
-      `📋 *LetterWise / Notice Summary*`,
+      `📋 *Samaj Notice Summary*`,
       `━━━━━━━━━━━━━━━━━━`,
-      `📄 *Type:* ${triage.document_type.toUpperCase()}`,
+      `📄 *Type:* ${t.documentTypes[triage.document_type] || triage.document_type.toUpperCase()}`,
       triage.issuer_name ? `🏢 *From:* ${triage.issuer_name}` : "",
       triage.core_meaning ? `📌 *Summary:* ${triage.core_meaning}` : "",
       triage.action_instructions ? `⚡ *Action:* ${triage.action_instructions}` : "",
-      triage.deadline ? `⏳ *Deadline:* ${triage.deadline}` : "",
-      triage.amount_due ? `💰 *Amount Due:* ${triage.amount_due}` : "",
-      isScam ? `🚨 *WARNING:* Suspicious red flags detected! Never share OTP or pay to personal UPI.` : "",
+      triage.deadline ? `⏳ *${t.deadlineLabel}:* ${triage.deadline}` : "",
+      triage.amount_due ? `💰 *${t.amountLabel}:* ${triage.amount_due}` : "",
+      isScam ? `🚨 *${t.scamAlertTitle}:* ${t.scamShieldPoints.noOtp}` : "",
       `ℹ️ _${triage.disclaimer}_`,
     ]
       .filter(Boolean)
@@ -120,7 +97,7 @@ export const TriageCard: React.FC<TriageCardProps> = ({
                 <div className="h-2 w-4/5 bg-slate-100 rounded"></div>
                 <div className="h-2 w-3/4 bg-slate-100 rounded"></div>
                 <div className="h-2 w-full bg-slate-100 rounded"></div>
-                <div className="h-8 w-full bg-slate-50 border border-slate-100 rounded mt-auto flex items-center justify-center">
+                <div className="h-8 w-full bg-slate-50 border border-slate-100 rounded mt-auto flex items-center justify-center font-sans font-bold">
                   Official Document
                 </div>
               </div>
@@ -135,41 +112,41 @@ export const TriageCard: React.FC<TriageCardProps> = ({
         <div className="lg:col-span-5 space-y-4">
           {/* Status Header Banner */}
           {!isScam && !isFallback ? (
-            <div className="flex items-center justify-between p-3.5 px-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900">
+            <div className="flex items-center justify-between p-3.5 px-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 shadow-2xs">
               <div className="flex items-center gap-2.5">
                 <div className="w-7 h-7 rounded-full bg-emerald-500 text-white flex items-center justify-center">
                   <ShieldCheck className="w-4 h-4" />
                 </div>
                 <span className="font-extrabold text-sm sm:text-base text-emerald-950">
-                  This looks genuine
+                  {t.safeBadge}
                 </span>
               </div>
               <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
-                Confidence: {triage.confidence === "high" ? "92%" : "78%"}
+                Confidence: {triage.confidence === "high" ? "95%" : "80%"}
               </span>
             </div>
           ) : isScam ? (
-            <div className="flex items-center justify-between p-3.5 px-4 rounded-2xl bg-red-50 border border-red-200 text-red-900">
+            <div className="flex items-center justify-between p-3.5 px-4 rounded-2xl bg-red-50 border border-red-200 text-red-900 shadow-2xs">
               <div className="flex items-center gap-2.5">
                 <div className="w-7 h-7 rounded-full bg-red-500 text-white flex items-center justify-center">
                   <ShieldAlert className="w-4 h-4" />
                 </div>
                 <span className="font-extrabold text-sm sm:text-base text-red-950">
-                  Potential Scam Detected
+                  {t.scamAlertTitle}
                 </span>
               </div>
               <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-red-600 text-white">
-                High Risk
+                {t.highRiskBadge}
               </span>
             </div>
           ) : (
-            <div className="flex items-center justify-between p-3.5 px-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900">
+            <div className="flex items-center justify-between p-3.5 px-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 shadow-2xs">
               <div className="flex items-center gap-2.5">
                 <div className="w-7 h-7 rounded-full bg-amber-500 text-white flex items-center justify-center">
                   <HelpCircle className="w-4 h-4" />
                 </div>
                 <span className="font-extrabold text-sm sm:text-base text-amber-950">
-                  Notice is Unclear / Blurry
+                  {t.fallbackNotice}
                 </span>
               </div>
               <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-amber-200 text-amber-900">
@@ -178,12 +155,12 @@ export const TriageCard: React.FC<TriageCardProps> = ({
             </div>
           )}
 
-          {/* Structured Specs Table matching the mockup */}
+          {/* Structured Specs Table */}
           <div className="rounded-2xl border border-slate-200 overflow-hidden bg-white text-xs sm:text-sm divide-y divide-slate-100">
             <div className="grid grid-cols-12 p-3 items-center hover:bg-slate-50/50">
               <div className="col-span-5 flex items-center gap-2 text-slate-500 font-semibold">
                 <Landmark className="w-4 h-4 text-blue-600" />
-                <span>Letter Type</span>
+                <span>{t.features.letterType}</span>
               </div>
               <div className="col-span-7 font-bold text-slate-900 capitalize">
                 {t.documentTypes[triage.document_type] || triage.document_type}
@@ -193,7 +170,7 @@ export const TriageCard: React.FC<TriageCardProps> = ({
             <div className="grid grid-cols-12 p-3 items-center hover:bg-slate-50/50">
               <div className="col-span-5 flex items-center gap-2 text-slate-500 font-semibold">
                 <Building className="w-4 h-4 text-blue-600" />
-                <span>From</span>
+                <span>{t.issuerLabel}</span>
               </div>
               <div className="col-span-7 font-bold text-slate-900">
                 {triage.issuer_name || "Official Issuing Authority"}
@@ -203,9 +180,9 @@ export const TriageCard: React.FC<TriageCardProps> = ({
             <div className="grid grid-cols-12 p-3 items-center hover:bg-slate-50/50">
               <div className="col-span-5 flex items-center gap-2 text-slate-500 font-semibold">
                 <FileText className="w-4 h-4 text-blue-600" />
-                <span>Purpose</span>
+                <span>{t.resultHeadingNotice}</span>
               </div>
-              <div className="col-span-7 font-medium text-slate-800 line-clamp-1">
+              <div className="col-span-7 font-medium text-slate-800 line-clamp-2">
                 {triage.core_meaning || "Official compliance notice"}
               </div>
             </div>
@@ -213,19 +190,19 @@ export const TriageCard: React.FC<TriageCardProps> = ({
             <div className="grid grid-cols-12 p-3 items-center hover:bg-slate-50/50">
               <div className="col-span-5 flex items-center gap-2 text-slate-500 font-semibold">
                 <Languages className="w-4 h-4 text-blue-600" />
-                <span>Language</span>
+                <span>{t.selectLanguage}</span>
               </div>
               <div className="col-span-7 font-semibold text-slate-700">
                 {language === "te" ? "తెలుగు (Telugu)" : language === "hi" ? "हिन्दी (Hindi)" : "English"}
               </div>
             </div>
 
-            {/* Deadline / Amount due row if present */}
+            {/* Deadline row if present */}
             {triage.deadline && (
-              <div className="grid grid-cols-12 p-3 items-center bg-red-50/40">
+              <div className="grid grid-cols-12 p-3 items-center bg-red-50/50">
                 <div className="col-span-5 flex items-center gap-2 text-red-600 font-semibold">
                   <Clock className="w-4 h-4" />
-                  <span>Deadline</span>
+                  <span>{t.deadlineLabel}</span>
                 </div>
                 <div className="col-span-7 font-black text-red-600">
                   {triage.deadline}
@@ -233,14 +210,27 @@ export const TriageCard: React.FC<TriageCardProps> = ({
               </div>
             )}
 
+            {/* Amount due row if present */}
             {triage.amount_due && (
-              <div className="grid grid-cols-12 p-3 items-center bg-emerald-50/40">
+              <div className="grid grid-cols-12 p-3 items-center bg-emerald-50/50">
                 <div className="col-span-5 flex items-center gap-2 text-emerald-700 font-semibold">
                   <Banknote className="w-4 h-4" />
-                  <span>Amount Due</span>
+                  <span>{t.amountLabel}</span>
                 </div>
                 <div className="col-span-7 font-black text-emerald-800">
                   {triage.amount_due}
+                </div>
+              </div>
+            )}
+
+            {/* Reference ID row if present */}
+            {triage.reference_id && (
+              <div className="grid grid-cols-12 p-3 items-center hover:bg-slate-50/50">
+                <div className="col-span-5 flex items-center gap-2 text-slate-500 font-semibold">
+                  <span>{t.referenceLabel}</span>
+                </div>
+                <div className="col-span-7 font-mono text-xs text-slate-700">
+                  {triage.reference_id}
                 </div>
               </div>
             )}
@@ -250,42 +240,54 @@ export const TriageCard: React.FC<TriageCardProps> = ({
         {/* Right Column: "What to do next?" */}
         <div className="lg:col-span-4 rounded-2xl border border-slate-200 bg-slate-50/70 p-4 sm:p-5 space-y-3.5">
           <h3 className="font-extrabold text-sm sm:text-base text-slate-900 tracking-tight">
-            What to do next?
+            {t.resultHeadingAction}
           </h3>
 
           <div className="space-y-2.5 text-xs sm:text-sm font-semibold text-slate-700">
             {/* Step 1 */}
-            <div className="flex items-start gap-2.5 p-2 rounded-xl bg-white border border-slate-200/80">
+            <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-white border border-slate-200/80">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-              <span>Read the simple summary below carefully.</span>
+              <span>{t.features.simpleSummaryDesc}</span>
             </div>
 
             {/* Step 2 */}
-            <div className="flex items-start gap-2.5 p-2 rounded-xl bg-white border border-slate-200/80">
+            <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-white border border-slate-200/80">
               <ExternalLink className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
               <span>
-                {triage.action_instructions || "Check details directly with the official authority."}
+                {triage.action_instructions || "Check details directly with the verified official authority."}
               </span>
             </div>
 
             {/* Step 3 */}
-            <div className="flex items-start gap-2.5 p-2 rounded-xl bg-white border border-slate-200/80">
+            <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-white border border-slate-200/80">
               <Building className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-              <span>If required, visit your nearest official branch or office.</span>
+              <span>If required, visit the official branch or municipal office directly.</span>
             </div>
 
             {/* Step 4: Security Shield Rule */}
-            <div className="flex items-start gap-2.5 p-2 rounded-xl bg-white border border-red-200">
+            <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-white border border-red-200">
               <Lock className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
               <span className="text-red-950 font-bold">
-                Do not share OTP, PIN, password, or CVV with anyone.
+                {t.scamShieldPoints.noOtp}
               </span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Tabs Row matching the mockup */}
+      {/* ============================================================== */}
+      {/* CENTRALIZED, HIGH-VISIBILITY VOICE NARRATION PLAYER (TTS)      */}
+      {/* ============================================================== */}
+      <div className="w-full">
+        <VoiceNarrator
+          textToSpeak={narrationText}
+          language={language}
+          title={t.ttsHeading}
+          subtext={t.ttsSubtext}
+        />
+      </div>
+
+      {/* Tabs Row for Summary & Translations */}
       <div className="pt-2 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <button
@@ -297,7 +299,7 @@ export const TriageCard: React.FC<TriageCardProps> = ({
                 : "bg-slate-100 text-slate-600 hover:bg-slate-200"
             }`}
           >
-            Simple Summary
+            {t.features.simpleSummary}
           </button>
 
           <button
@@ -309,7 +311,7 @@ export const TriageCard: React.FC<TriageCardProps> = ({
                 : "bg-slate-100 text-slate-600 hover:bg-slate-200"
             }`}
           >
-            Detailed Explanation
+            {t.viewDetails}
           </button>
 
           {onLanguageChange && (
@@ -326,7 +328,7 @@ export const TriageCard: React.FC<TriageCardProps> = ({
                     : "bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200"
                 }`}
               >
-                Translate (Telugu)
+                తెలుగు (Telugu)
               </button>
 
               <button
@@ -341,79 +343,66 @@ export const TriageCard: React.FC<TriageCardProps> = ({
                     : "bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200"
                 }`}
               >
-                Translate (Hindi)
+                हिन्दी (Hindi)
               </button>
             </>
           )}
         </div>
 
-        {/* Action Controls: Audio narration, WhatsApp, Scan Another */}
+        {/* Action Controls: WhatsApp Share & Scan Another */}
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={handleSpeak}
-            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs sm:text-sm font-bold transition-all cursor-pointer ${
-              isSpeaking
-                ? "bg-amber-500 text-white animate-pulse"
-                : "bg-slate-100 hover:bg-slate-200 text-slate-700"
-            }`}
-          >
-            {isSpeaking ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4 text-blue-600" />}
-            <span>{isSpeaking ? "Stop" : "Listen"}</span>
-          </button>
-
-          <button
-            type="button"
             onClick={handleWhatsAppShare}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs sm:text-sm font-bold bg-[#25D366] hover:bg-[#20ba59] text-white shadow-2xs transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs sm:text-sm font-bold bg-[#25D366] hover:bg-[#20ba59] text-white shadow-2xs transition-all cursor-pointer active:scale-98"
           >
             <MessageCircle className="w-4 h-4 fill-current" />
-            <span className="hidden sm:inline">WhatsApp</span>
+            <span>WhatsApp</span>
           </button>
 
           <button
             type="button"
             onClick={onReset}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs sm:text-sm font-bold bg-slate-900 hover:bg-black text-white transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs sm:text-sm font-bold bg-slate-900 hover:bg-black text-white transition-all cursor-pointer active:scale-98"
           >
             <RefreshCw className="w-3.5 h-3.5" />
-            <span>Scan Another</span>
+            <span>{t.anotherNoticeButton}</span>
           </button>
         </div>
       </div>
 
-      {/* Summary Box with AI Sparkle Icon matching the mockup */}
+      {/* Summary Box with AI Sparkle Icon */}
       <div className="p-5 sm:p-6 rounded-2xl bg-blue-50/60 border border-blue-100 space-y-2">
         <div className="flex items-center gap-2 text-blue-700 font-extrabold text-sm sm:text-base">
           <Sparkles className="w-5 h-5 text-purple-600" />
           <span>
             {activeTab === "detailed"
-              ? "Detailed Legal & Official Breakdown"
+              ? t.detailsHeading
               : activeTab === "telugu"
-              ? "సరళమైన వివరణ (Simple Summary)"
+              ? "సరళమైన వివరణ (Telugu Summary)"
               : activeTab === "hindi"
-              ? "सरल हिंदी सारांश (Simple Summary)"
-              : "Simple Summary"}
+              ? "सरल हिंदी सारांश (Hindi Summary)"
+              : t.features.simpleSummary}
           </span>
         </div>
 
         <p className="text-sm sm:text-base font-semibold text-slate-800 leading-relaxed">
           {activeTab === "detailed"
-            ? `${triage.core_meaning || "Official document"} ${triage.action_instructions || ""} ${
-                triage.reference_id ? `Account / Reference ID: ${triage.reference_id}.` : ""
+            ? `${triage.core_meaning || "Official document."} ${triage.action_instructions || ""} ${
+                triage.reference_id ? `Reference ID: ${triage.reference_id}.` : ""
               }`
             : triage.core_meaning ||
-              "This is an official notice. You do not need to worry. Please verify through the official website or visit your nearest branch."}
+              "This is an official notice. Please review the extracted information and verify through the verified official portal."}
         </p>
 
         {triage.action_instructions && activeTab === "summary" && (
           <p className="text-xs sm:text-sm font-bold text-blue-900 pt-1">
-            👉 Immediate Action: {triage.action_instructions}
+            👉 {t.resultHeadingAction}: {triage.action_instructions}
           </p>
         )}
 
         {isScam && triage.red_flags.length > 0 && (
-          <div className="mt-3 p-3 rounded-xl bg-red-100/70 border border-red-200 text-red-950 text-xs sm:text-sm font-bold">
+          <div className="mt-3 p-3.5 rounded-xl bg-red-100/70 border border-red-200 text-red-950 text-xs sm:text-sm font-bold">
             ⚠️ Red Flags: {triage.red_flags.join("; ")}
           </div>
         )}
@@ -421,7 +410,7 @@ export const TriageCard: React.FC<TriageCardProps> = ({
 
       {/* Subtle Disclaimer Footer */}
       <p className="text-[11px] text-center text-slate-400">
-        ⚖️ {triage.disclaimer}
+        ⚖️ {triage.disclaimer || t.disclaimerPrefix}
       </p>
     </section>
   );

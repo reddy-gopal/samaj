@@ -32,7 +32,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Notice Explainer — Understand Official Notices Safely",
+  title: "Samaj — Understand Official Notices & Letters Safely",
   description:
     "Instant, accessible plain-language triage for electricity bills, bank KYC notices, court summons, and tax demands in Telugu, Hindi, and English.",
   manifest: "/manifest.json",
@@ -43,7 +43,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Notice Explainer",
+    title: "Samaj",
   },
 };
 

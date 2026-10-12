@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
 
     for (const modelName of candidateModels) {
       try {
-        console.log(`[Notice Explainer] Sending real image to open-weight model: ${modelName}...`);
+        console.log(`[Samaj] Sending real image to open-weight model: ${modelName}...`);
         const response = await ai.models.generateContent({
           model: modelName,
           contents: [
@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
 
         const rawText = response.text || "";
         if (!rawText) {
-          console.warn(`[Notice Explainer] Open-weight model ${modelName} returned empty text.`);
+          console.warn(`[Samaj] Open-weight model ${modelName} returned empty text.`);
           continue;
         }
 
@@ -112,18 +112,18 @@ export async function POST(req: NextRequest) {
           const parsedJson = extractAndParseJson(rawText);
           const validation = NoticeTriageSchema.safeParse(parsedJson);
           if (validation.success) {
-            console.log(`[Notice Explainer] Successfully extracted and validated real triage with ${modelName}!`);
+            console.log(`[Samaj] Successfully extracted and validated real triage with ${modelName}!`);
             validatedResult = validation.data;
             break;
           } else {
-            console.warn(`[Notice Explainer] Schema validation issue on ${modelName}:`, validation.error.issues);
+            console.warn(`[Samaj] Schema validation issue on ${modelName}:`, validation.error.issues);
           }
         } catch (jsonErr) {
-          console.warn(`[Notice Explainer] JSON parse error on ${modelName}:`, jsonErr);
+          console.warn(`[Samaj] JSON parse error on ${modelName}:`, jsonErr);
         }
       } catch (callErr: unknown) {
         lastError = callErr;
-        console.warn(`[Notice Explainer] Open-weight model ${modelName} failed:`, (callErr as Error)?.message || callErr);
+        console.warn(`[Samaj] Open-weight model ${modelName} failed:`, (callErr as Error)?.message || callErr);
       }
     }
 

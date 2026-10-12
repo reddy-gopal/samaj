@@ -1,7 +1,7 @@
 {
-  "name": "Notice Explainer",
-  "short_name": "NoticeExplainer",
-  "description": "Understand official notices safely in Telugu, Hindi, or English",
+  "name": "Samaj",
+  "short_name": "Samaj",
+  "description": "Understand official notices and letters safely in Telugu, Hindi, or English",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

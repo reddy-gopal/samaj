@@ -1,14 +1,14 @@
-# Notice Explainer 🛡️📄
-> **Understand official notices safely in Telugu, Hindi, or English.**  
+# Samaj 🛡️📄
+> **Understand official notices & letters safely in Telugu, Hindi, or English.**  
 > *Built for MLH Hacktoberfest Hackathon.*
 
 ---
 
 ## 🌟 Project Overview
 
-**Notice Explainer** is a mobile-first, privacy-respecting web application designed to help elderly citizens, first-generation English readers, and small business owners in India navigate confusing and threatening official-looking notices. 
+**Samaj** is a mobile-first, privacy-respecting web application designed to help elderly citizens, first-generation English readers, and small business owners in India navigate confusing and threatening official-looking notices. 
 
-Whether it is an electricity disconnection warning, bank KYC deadline, tax demand, court summons, or insurance lapse letter, **Notice Explainer provides immediate safety triage—not legal advice.** Users photograph physical notices and receive instant, plain-language answers in their native language (Telugu, Hindi, or English).
+Whether it is an electricity disconnection warning, bank KYC deadline, tax demand, court summons, or insurance lapse letter, **Samaj provides immediate safety triage—not legal advice.** Users photograph physical notices and receive instant, plain-language answers in their native language (Telugu, Hindi, or English).
 
 ---
 
@@ -20,7 +20,7 @@ In India, cybercriminals frequently exploit fear and bureaucratic intimidation t
 - **Fraudulent Legal / Court Demands:** Using spoofed official seals to demand immediate money transfers.
 - **Digital Literacy Barrier:** Millions of senior citizens and regional language speakers struggle to parse dense bureaucratic jargon, making them vulnerable to extortion or causing them to miss genuine critical deadlines.
 
-**Notice Explainer eliminates this panic through instant, structured AI triage.**
+**Samaj eliminates this panic through instant, structured AI triage.**
 
 ---
 

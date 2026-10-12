@@ -84,7 +84,7 @@ export const ShareButtons: React.FC<ShareButtonsProps> = ({
 
   const handleWhatsAppShare = () => {
     const lines: string[] = [
-      `📋 *Notice Explainer Summary* (${SUPPORTED_LANGUAGES.find((l) => l.code === language)?.name})`,
+      `📋 *Samaj Summary* (${SUPPORTED_LANGUAGES.find((l) => l.code === language)?.name})`,
       `━━━━━━━━━━━━━━━━━━`,
     ];
 
