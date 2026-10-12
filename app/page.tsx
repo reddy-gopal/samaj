@@ -144,6 +144,18 @@ export default function SamajApp() {
     setLanguage(newLang);
   };
 
+  const handleGoHome = () => {
+    setTriageResult(null);
+    setCurrentImage(null);
+    setFileName(null);
+    setFileType(null);
+    setPdfPages([]);
+    setCurrentPageIndex(1);
+    setMobileDetailOpen(false);
+    setErrorMessage(null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -419,7 +431,7 @@ export default function SamajApp() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 font-sans antialiased selection:bg-blue-200">
+    <div id="home" className="min-h-screen bg-[#F8FAFC] text-slate-900 font-sans antialiased selection:bg-blue-200">
       {/* Hidden file & camera inputs */}
       <input
         ref={fileInputRef}
@@ -477,8 +489,13 @@ export default function SamajApp() {
       <div className="block md:hidden min-h-screen bg-[#F8FAFC] pb-24">
         {/* Mobile Header Bar */}
         <div className="px-5 pt-4 pb-2 flex items-center justify-between bg-[#F8FAFC]">
-          <div className="flex items-center gap-2.5">
-            <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-[#2563EB] text-white shadow-xs">
+          <button
+            type="button"
+            onClick={handleGoHome}
+            className="flex items-center gap-2.5 cursor-pointer text-left group"
+            aria-label="Go to Home"
+          >
+            <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-[#2563EB] text-white shadow-xs transition-transform group-hover:scale-105">
               <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
                 <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
               </svg>
@@ -495,7 +512,7 @@ export default function SamajApp() {
                 </span>
               </span>
             </div>
-          </div>
+          </button>
 
           <div className="flex items-center gap-2.5">
             <button
@@ -662,7 +679,7 @@ export default function SamajApp() {
           <div className="flex items-center justify-around">
             <button
               type="button"
-              onClick={() => setMobileDetailOpen(false)}
+              onClick={handleGoHome}
               className="flex flex-col items-center gap-1 text-[#2563EB] cursor-pointer"
             >
               <HomeIcon className="w-6 h-6 stroke-[2.2]" />
@@ -797,6 +814,7 @@ export default function SamajApp() {
           currentLanguage={language}
           onLanguageChange={(newLang) => handleLanguageChange(newLang)}
           onScanClick={() => setShowCameraModal(true)}
+          onHomeClick={handleGoHome}
         />
 
         <main className="max-w-7xl mx-auto px-6 lg:px-8 w-full space-y-12 mt-8 mb-16">

@@ -9,12 +9,14 @@ interface NavbarProps {
   currentLanguage: SupportedLanguage;
   onLanguageChange: (lang: SupportedLanguage) => void;
   onScanClick: () => void;
+  onHomeClick?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   currentLanguage,
   onLanguageChange,
   onScanClick,
+  onHomeClick,
 }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -26,7 +28,16 @@ export const Navbar: React.FC<NavbarProps> = ({
     <header className="sticky top-0 z-40 w-full bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-2xs">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between">
         {/* Brand Logo - Samaj */}
-        <a href="#home" className="flex items-center gap-3 group">
+        <a
+          href="/"
+          onClick={(e) => {
+            if (onHomeClick) {
+              e.preventDefault();
+              onHomeClick();
+            }
+          }}
+          className="flex items-center gap-3 group cursor-pointer"
+        >
           <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-blue-600 text-white shadow-sm transition-transform group-hover:scale-105">
             {/* Document icon with AI badge */}
             <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
@@ -50,8 +61,14 @@ export const Navbar: React.FC<NavbarProps> = ({
         {/* Desktop Navigation Links */}
         <nav className="hidden md:flex items-center gap-7 text-sm font-semibold text-slate-600">
           <a
-            href="#home"
-            className="text-slate-700 font-bold transition-colors hover:text-blue-600"
+            href="/"
+            onClick={(e) => {
+              if (onHomeClick) {
+                e.preventDefault();
+                onHomeClick();
+              }
+            }}
+            className="text-slate-700 font-bold transition-colors hover:text-blue-600 cursor-pointer"
           >
             {t.navHome}
           </a>
