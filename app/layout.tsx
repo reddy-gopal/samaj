@@ -32,7 +32,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "LetterWise — Understand Official Letters & Notices Safely",
+  title: "Samaj — Understand Official Letters & Notices Safely",
   description:
     "Instant, accessible plain-language triage for electricity bills, bank KYC notices, court summons, and tax demands in Telugu, Hindi, and English.",
   manifest: "/manifest.json",
@@ -43,7 +43,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "LetterWise",
+    title: "Samaj",
   },
 };
 

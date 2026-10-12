@@ -58,17 +58,10 @@ export const Navbar: React.FC<NavbarProps> = ({
           <button
             type="button"
             onClick={onScanClick}
-            className="text-slate-600 hover:text-blue-600 transition-colors cursor-pointer flex items-center gap-1.5"
+            className="text-slate-600 hover:text-blue-600 transition-colors cursor-pointer font-semibold"
           >
-            <Camera className="w-4 h-4 text-blue-600" />
-            <span>{t.navScan}</span>
+            Scan
           </button>
-          <a
-            href="#samples"
-            className="text-slate-600 hover:text-blue-600 transition-colors"
-          >
-            {t.sampleNoticesTitle}
-          </a>
           <a
             href="#recent"
             className="text-slate-600 hover:text-blue-600 transition-colors"

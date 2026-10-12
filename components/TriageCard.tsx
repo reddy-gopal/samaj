@@ -111,7 +111,7 @@ export const TriageCard: React.FC<TriageCardProps> = ({
 
   const handleWhatsAppShare = () => {
     const lines = [
-      `📋 *LetterWise / Notice Summary*`,
+      `📋 *Samaj / Notice Summary*`,
       `━━━━━━━━━━━━━━━━━━`,
       `📄 *Type:* ${triage.document_type.toUpperCase()}`,
       triage.issuer_name ? `🏢 *From:* ${triage.issuer_name}` : "",

@@ -1,6 +1,6 @@
 {
-  "name": "LetterWise — Notice Explainer",
-  "short_name": "LetterWise",
+  "name": "Samaj — Notice & Letter Triage",
+  "short_name": "Samaj",
   "description": "Understand official notices safely in Telugu, Hindi, or English with AI triage",
   "start_url": "/",
   "display": "standalone",
