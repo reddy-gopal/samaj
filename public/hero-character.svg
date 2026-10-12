@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E0E7FF" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#EDE9FE" stop-opacity="0.4"/>
+    </linearGradient>
+    <linearGradient id="shirtGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2563EB"/>
+      <stop offset="100%" stop-color="#1D4ED8"/>
+    </linearGradient>
+    <filter id="softShadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#1E3A8A" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+
+  <!-- Soft Circular Background Glow -->
+  <circle cx="250" cy="250" r="210" fill="url(#bgGlow)"/>
+  <circle cx="250" cy="250" r="170" fill="#EEF2FF" opacity="0.6"/>
+
+  <!-- Character Torso & Arms -->
+  <path d="M170 420 C170 320, 210 290, 250 290 C290 290, 330 320, 330 420 Z" fill="url(#shirtGrad)" filter="url(#softShadow)"/>
+  <!-- Neck -->
+  <rect x="235" y="240" width="30" height="40" rx="8" fill="#FBCFE8"/>
+  <rect x="235" y="240" width="30" height="40" rx="8" fill="#F472B6" opacity="0.15"/>
+  <path d="M232 275 L250 290 L268 275 Z" fill="#E2E8F0"/>
+
+  <!-- Head & Hair -->
+  <circle cx="250" cy="200" r="54" fill="#FDE047" opacity="0.0"/>
+  <!-- Face -->
+  <ellipse cx="250" cy="210" rx="46" ry="50" fill="#FCD34D" opacity="0.3"/>
+  <ellipse cx="250" cy="210" rx="44" ry="48" fill="#FFEDD5"/>
+  <!-- Eyes -->
+  <ellipse cx="234" cy="208" rx="5" ry="6" fill="#1E293B"/>
+  <circle cx="236" cy="206" r="2" fill="#FFFFFF"/>
+  <ellipse cx="266" cy="208" rx="5" ry="6" fill="#1E293B"/>
+  <circle cx="268" cy="206" r="2" fill="#FFFFFF"/>
+  <!-- Smile -->
+  <path d="M242 228 Q250 236 258 228" stroke="#0F172A" stroke-width="3" stroke-linecap="round" fill="none"/>
+  <!-- Cheeks -->
+  <circle cx="226" cy="218" r="7" fill="#F43F5E" opacity="0.25"/>
+  <circle cx="274" cy="218" r="7" fill="#F43F5E" opacity="0.25"/>
+  <!-- Hair -->
+  <path d="M200 195 C200 145, 230 135, 255 135 C285 135, 305 155, 305 190 C295 180, 280 185, 265 175 C245 185, 220 180, 200 195 Z" fill="#0F172A"/>
+
+  <!-- Official Document Paper Held in Front -->
+  <g transform="translate(180, 260) rotate(-6)" filter="url(#softShadow)">
+    <rect x="0" y="0" width="130" height="170" rx="12" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/>
+    <!-- Document lines -->
+    <rect x="18" y="24" width="70" height="8" rx="4" fill="#3B82F6"/>
+    <rect x="18" y="44" width="94" height="6" rx="3" fill="#94A3B8"/>
+    <rect x="18" y="58" width="85" height="6" rx="3" fill="#CBD5E1"/>
+    <rect x="18" y="72" width="94" height="6" rx="3" fill="#CBD5E1"/>
+    <rect x="18" y="86" width="60" height="6" rx="3" fill="#CBD5E1"/>
+    <!-- Verified Shield on Document -->
+    <circle cx="65" cy="125" r="22" fill="#10B981" filter="url(#softShadow)"/>
+    <path d="M57 125 L63 131 L74 119" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </g>
+
+  <!-- Hands Holding Document -->
+  <ellipse cx="185" cy="360" rx="14" ry="12" fill="#FFEDD5"/>
+  <ellipse cx="310" cy="350" rx="14" ry="12" fill="#FFEDD5"/>
+</svg>

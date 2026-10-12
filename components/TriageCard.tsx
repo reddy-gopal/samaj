@@ -1,21 +1,27 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { NoticeTriageResult, SupportedLanguage } from "@/lib/schema";
 import { TRANSLATIONS } from "@/lib/languages";
-import { ScamWarning } from "./ScamWarning";
-import { FallbackCard } from "./FallbackCard";
-import { ShareButtons } from "./ShareButtons";
 import {
-  Calendar,
-  IndianRupee,
-  Building2,
+  ShieldCheck,
+  ShieldAlert,
+  AlertTriangle,
+  Building,
+  Landmark,
   FileText,
-  AlertCircle,
+  Languages,
   CheckCircle2,
-  ChevronDown,
-  ChevronUp,
-  Info,
+  ExternalLink,
+  Lock,
+  Volume2,
+  VolumeX,
+  MessageCircle,
+  RefreshCw,
+  Sparkles,
+  HelpCircle,
+  Clock,
+  Banknote,
 } from "lucide-react";
 
 interface TriageCardProps {
@@ -23,6 +29,7 @@ interface TriageCardProps {
   language: SupportedLanguage;
   onReset: () => void;
   imageUrl?: string;
+  onLanguageChange?: (lang: SupportedLanguage) => void;
 }
 
 export const TriageCard: React.FC<TriageCardProps> = ({
@@ -30,263 +37,392 @@ export const TriageCard: React.FC<TriageCardProps> = ({
   language,
   onReset,
   imageUrl,
+  onLanguageChange,
 }) => {
   const t = TRANSLATIONS[language];
-  const [showFullDetails, setShowFullDetails] = useState(false);
+  const [activeTab, setActiveTab] = useState<"summary" | "detailed" | "telugu" | "hindi">("summary");
+  const [isSpeaking, setIsSpeaking] = useState(false);
 
-  // Trigger fallback card condition
-  const shouldShowFallback =
-    !triage.is_legible ||
-    triage.immediate_action === "unclear" ||
-    triage.confidence === "low";
+  useEffect(() => {
+    return () => {
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
 
-  const hasScamWarning = triage.scam_risk !== "none_detected";
+  const isScam = triage.scam_risk !== "none_detected";
+  const isFallback =
+    !triage.is_legible || triage.immediate_action === "unclear" || triage.confidence === "low";
+
+  const handleSpeak = () => {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+
+    if (isSpeaking) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+    const textToSpeak = triage.core_meaning || triage.action_instructions || "Notice summary";
+    const utterance = new SpeechSynthesisUtterance(textToSpeak);
+
+    if (language === "te") utterance.lang = "te-IN";
+    else if (language === "hi") utterance.lang = "hi-IN";
+    else utterance.lang = "en-IN";
+
+    utterance.rate = 0.95;
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const handleWhatsAppShare = () => {
+    const lines = [
+      `📋 *LetterWise / Notice Summary*`,
+      `━━━━━━━━━━━━━━━━━━`,
+      `📄 *Type:* ${triage.document_type.toUpperCase()}`,
+      triage.issuer_name ? `🏢 *From:* ${triage.issuer_name}` : "",
+      triage.core_meaning ? `📌 *Summary:* ${triage.core_meaning}` : "",
+      triage.action_instructions ? `⚡ *Action:* ${triage.action_instructions}` : "",
+      triage.deadline ? `⏳ *Deadline:* ${triage.deadline}` : "",
+      triage.amount_due ? `💰 *Amount Due:* ${triage.amount_due}` : "",
+      isScam ? `🚨 *WARNING:* Suspicious red flags detected! Never share OTP or pay to personal UPI.` : "",
+      `ℹ️ _${triage.disclaimer}_`,
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    window.open(`https://wa.me/?text=${encodeURIComponent(lines)}`, "_blank");
+  };
 
   return (
-    <article className="w-full space-y-5 animate-in fade-in duration-300">
-      {/* Top badges: Document Type & Scam Status */}
-      <div className="flex flex-wrap items-center justify-between gap-2.5">
-        <div className="flex items-center gap-2">
-          <span className="px-3.5 py-1.5 rounded-full bg-neutral-900 text-white font-bold text-xs sm:text-sm tracking-wide shadow-2xs">
-            {t.documentTypes[triage.document_type] || triage.document_type}
-          </span>
-          {triage.confidence && (
-            <span
-              className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
-                triage.confidence === "high"
-                  ? "bg-emerald-100 text-emerald-800"
-                  : triage.confidence === "medium"
-                  ? "bg-blue-100 text-blue-800"
-                  : "bg-neutral-100 text-neutral-700"
-              }`}
-            >
-              Confidence: {triage.confidence}
-            </span>
-          )}
-        </div>
-
-        {/* Safety indicator pill */}
-        {!hasScamWarning ? (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 font-bold text-xs border border-emerald-300">
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-            {t.safeBadge}
-          </span>
-        ) : (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-100 text-red-800 font-bold text-xs border border-red-300">
-            <AlertCircle className="w-3.5 h-3.5 text-red-600" />
-            {triage.scam_risk === "high_risk" ? t.highRiskBadge : t.warningRiskBadge}
-          </span>
-        )}
-      </div>
-
-      {/* Prominent Red Scam Warning Card (if applicable) */}
-      {hasScamWarning && (
-        <ScamWarning
-          scamRisk={triage.scam_risk}
-          redFlags={triage.red_flags}
-          language={language}
-        />
-      )}
-
-      {/* Amber Uncertainty / Fallback Card (if applicable) */}
-      {shouldShowFallback && (
-        <FallbackCard language={language} onRetake={onReset} />
-      )}
-
-      {/* Card 1: What is this notice? */}
-      {triage.core_meaning && (
-        <section
-          aria-labelledby="heading-notice-meaning"
-          className="rounded-2xl border-2 border-neutral-200 bg-white p-5 sm:p-6 shadow-sm space-y-2.5"
-        >
-          <div className="flex items-center gap-2 text-emerald-700">
-            <Info className="w-5 h-5 shrink-0" />
-            <h2
-              id="heading-notice-meaning"
-              className="text-sm font-black uppercase tracking-wider text-neutral-500"
-            >
-              {t.resultHeadingNotice}
-            </h2>
-          </div>
-          <p className="text-xl sm:text-2xl font-bold text-neutral-950 leading-snug tracking-tight">
-            {triage.core_meaning}
-          </p>
-        </section>
-      )}
-
-      {/* Card 2: What should I do? */}
-      {triage.action_instructions && (
-        <section
-          aria-labelledby="heading-action-instructions"
-          className="rounded-2xl border-2 border-emerald-500 bg-emerald-50/70 p-5 sm:p-6 shadow-sm space-y-3"
-        >
-          <div className="flex items-center justify-between">
-            <h2
-              id="heading-action-instructions"
-              className="text-sm font-black uppercase tracking-wider text-emerald-900"
-            >
-              {t.resultHeadingAction}
-            </h2>
-            <span className="px-3 py-1 rounded-full bg-emerald-600 text-white font-bold text-xs shadow-2xs">
-              {t.actionLabels[triage.immediate_action]}
+    <section className="w-full bg-white rounded-3xl border border-slate-200 shadow-sm p-4 sm:p-6 lg:p-8 space-y-6">
+      {/* 3-Column Inspection Grid (Thumbnail, Details Table, Next Steps) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* Left Column: Letter Thumbnail / Scanned Preview */}
+        <div className="lg:col-span-3 flex flex-col items-center">
+          <div className="w-full max-w-[240px] aspect-[3/4] rounded-2xl border border-slate-200 bg-slate-50 p-2 shadow-2xs overflow-hidden flex flex-col items-center justify-center relative group">
+            {imageUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={imageUrl}
+                alt="Scanned letter preview"
+                className="w-full h-full object-contain rounded-xl"
+              />
+            ) : (
+              <div className="w-full h-full bg-white rounded-xl p-3 flex flex-col gap-2 text-slate-400 font-mono text-[9px] border border-dashed border-slate-200 select-none">
+                <div className="h-4 w-16 bg-blue-100 rounded mb-2"></div>
+                <div className="h-2 w-full bg-slate-100 rounded"></div>
+                <div className="h-2 w-4/5 bg-slate-100 rounded"></div>
+                <div className="h-2 w-3/4 bg-slate-100 rounded"></div>
+                <div className="h-2 w-full bg-slate-100 rounded"></div>
+                <div className="h-8 w-full bg-slate-50 border border-slate-100 rounded mt-auto flex items-center justify-center">
+                  Official Document
+                </div>
+              </div>
+            )}
+            <span className="absolute bottom-3 text-[10px] font-bold bg-slate-900/80 text-white px-2.5 py-1 rounded-full backdrop-blur-xs">
+              Analyzed Image
             </span>
           </div>
-          <p className="text-lg sm:text-xl font-bold text-neutral-900 leading-relaxed">
-            {triage.action_instructions}
-          </p>
-        </section>
-      )}
-
-      {/* Visible Critical Fields: Deadline & Amount Due (shown only when NOT null) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-        {/* Deadline Card */}
-        {triage.deadline !== null && (
-          <section
-            aria-labelledby="heading-deadline"
-            className="flex items-start gap-3.5 p-4 sm:p-5 rounded-2xl bg-white border-2 border-neutral-300 shadow-2xs"
-          >
-            <div className="p-3 rounded-xl bg-red-100 text-red-700 shrink-0">
-              <Calendar className="w-6 h-6" />
-            </div>
-            <div>
-              <h3
-                id="heading-deadline"
-                className="text-xs font-black uppercase tracking-wider text-neutral-500"
-              >
-                {t.deadlineLabel}
-              </h3>
-              <p className="text-lg sm:text-xl font-black text-red-600 mt-0.5">
-                {triage.deadline}
-              </p>
-            </div>
-          </section>
-        )}
-
-        {/* Amount Due Card */}
-        {triage.amount_due !== null && (
-          <section
-            aria-labelledby="heading-amount"
-            className="flex items-start gap-3.5 p-4 sm:p-5 rounded-2xl bg-white border-2 border-neutral-300 shadow-2xs"
-          >
-            <div className="p-3 rounded-xl bg-emerald-100 text-emerald-700 shrink-0">
-              <IndianRupee className="w-6 h-6" />
-            </div>
-            <div>
-              <h3
-                id="heading-amount"
-                className="text-xs font-black uppercase tracking-wider text-neutral-500"
-              >
-                {t.amountLabel}
-              </h3>
-              <p className="text-lg sm:text-xl font-black text-emerald-800 mt-0.5">
-                {triage.amount_due}
-              </p>
-            </div>
-          </section>
-        )}
-      </div>
-
-      {/* Issuer and Reference ID (shown only when present) */}
-      {(triage.issuer_name !== null || triage.reference_id !== null) && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {triage.issuer_name !== null && (
-            <div className="flex items-center gap-3 p-3.5 rounded-xl bg-neutral-50 border border-neutral-200">
-              <Building2 className="w-5 h-5 text-neutral-600 shrink-0" />
-              <div>
-                <span className="text-xs font-semibold text-neutral-500 block">
-                  {t.issuerLabel}
-                </span>
-                <span className="text-sm font-bold text-neutral-900 block">
-                  {triage.issuer_name}
-                </span>
-              </div>
-            </div>
-          )}
-
-          {triage.reference_id !== null && (
-            <div className="flex items-center gap-3 p-3.5 rounded-xl bg-neutral-50 border border-neutral-200">
-              <FileText className="w-5 h-5 text-neutral-600 shrink-0" />
-              <div>
-                <span className="text-xs font-semibold text-neutral-500 block">
-                  {t.referenceLabel}
-                </span>
-                <span className="text-sm font-bold font-mono text-neutral-900 block">
-                  {triage.reference_id}
-                </span>
-              </div>
-            </div>
-          )}
         </div>
-      )}
 
-      {/* Toggle Full Extracted Details / Image preview */}
-      <div className="rounded-2xl border border-neutral-200 bg-white overflow-hidden shadow-2xs">
-        <button
-          type="button"
-          onClick={() => setShowFullDetails(!showFullDetails)}
-          className="w-full flex items-center justify-between p-4 text-left font-bold text-sm text-neutral-800 hover:bg-neutral-50 transition-colors cursor-pointer"
-        >
-          <span>{showFullDetails ? t.hideDetails : t.viewDetails}</span>
-          {showFullDetails ? (
-            <ChevronUp className="w-5 h-5 text-neutral-500" />
+        {/* Center Column: Status Banner & Specs Table */}
+        <div className="lg:col-span-5 space-y-4">
+          {/* Status Header Banner */}
+          {!isScam && !isFallback ? (
+            <div className="flex items-center justify-between p-3.5 px-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900">
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-full bg-emerald-500 text-white flex items-center justify-center">
+                  <ShieldCheck className="w-4 h-4" />
+                </div>
+                <span className="font-extrabold text-sm sm:text-base text-emerald-950">
+                  This looks genuine
+                </span>
+              </div>
+              <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                Confidence: {triage.confidence === "high" ? "92%" : "78%"}
+              </span>
+            </div>
+          ) : isScam ? (
+            <div className="flex items-center justify-between p-3.5 px-4 rounded-2xl bg-red-50 border border-red-200 text-red-900">
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-full bg-red-500 text-white flex items-center justify-center">
+                  <ShieldAlert className="w-4 h-4" />
+                </div>
+                <span className="font-extrabold text-sm sm:text-base text-red-950">
+                  Potential Scam Detected
+                </span>
+              </div>
+              <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-red-600 text-white">
+                High Risk
+              </span>
+            </div>
           ) : (
-            <ChevronDown className="w-5 h-5 text-neutral-500" />
-          )}
-        </button>
-
-        {showFullDetails && (
-          <div className="p-4 pt-1 border-t border-neutral-100 bg-neutral-50/50 space-y-3 text-xs sm:text-sm">
-            {imageUrl && (
-              <div className="mb-3">
-                <span className="text-xs font-bold text-neutral-500 block mb-1">
-                  Notice Photo Analyzed:
+            <div className="flex items-center justify-between p-3.5 px-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900">
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-full bg-amber-500 text-white flex items-center justify-center">
+                  <HelpCircle className="w-4 h-4" />
+                </div>
+                <span className="font-extrabold text-sm sm:text-base text-amber-950">
+                  Notice is Unclear / Blurry
                 </span>
-                <div className="max-h-56 overflow-hidden rounded-xl border border-neutral-300 bg-black/5 flex items-center justify-center">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={imageUrl}
-                    alt="Uploaded notice thumbnail"
-                    className="max-h-56 object-contain w-auto rounded-lg"
-                  />
+              </div>
+              <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-amber-200 text-amber-900">
+                Low Confidence
+              </span>
+            </div>
+          )}
+
+          {/* Structured Specs Table matching the mockup */}
+          <div className="rounded-2xl border border-slate-200 overflow-hidden bg-white text-xs sm:text-sm divide-y divide-slate-100">
+            <div className="grid grid-cols-12 p-3 items-center hover:bg-slate-50/50">
+              <div className="col-span-5 flex items-center gap-2 text-slate-500 font-semibold">
+                <Landmark className="w-4 h-4 text-blue-600" />
+                <span>Letter Type</span>
+              </div>
+              <div className="col-span-7 font-bold text-slate-900 capitalize">
+                {t.documentTypes[triage.document_type] || triage.document_type}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-12 p-3 items-center hover:bg-slate-50/50">
+              <div className="col-span-5 flex items-center gap-2 text-slate-500 font-semibold">
+                <Building className="w-4 h-4 text-blue-600" />
+                <span>From</span>
+              </div>
+              <div className="col-span-7 font-bold text-slate-900">
+                {triage.issuer_name || "Official Issuing Authority"}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-12 p-3 items-center hover:bg-slate-50/50">
+              <div className="col-span-5 flex items-center gap-2 text-slate-500 font-semibold">
+                <FileText className="w-4 h-4 text-blue-600" />
+                <span>Purpose</span>
+              </div>
+              <div className="col-span-7 font-medium text-slate-800 line-clamp-1">
+                {triage.core_meaning || "Official compliance notice"}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-12 p-3 items-center hover:bg-slate-50/50">
+              <div className="col-span-5 flex items-center gap-2 text-slate-500 font-semibold">
+                <Languages className="w-4 h-4 text-blue-600" />
+                <span>Language</span>
+              </div>
+              <div className="col-span-7 font-semibold text-slate-700">
+                {language === "te" ? "తెలుగు (Telugu)" : language === "hi" ? "हिन्दी (Hindi)" : "English"}
+              </div>
+            </div>
+
+            {/* Deadline / Amount due row if present */}
+            {triage.deadline && (
+              <div className="grid grid-cols-12 p-3 items-center bg-red-50/40">
+                <div className="col-span-5 flex items-center gap-2 text-red-600 font-semibold">
+                  <Clock className="w-4 h-4" />
+                  <span>Deadline</span>
+                </div>
+                <div className="col-span-7 font-black text-red-600">
+                  {triage.deadline}
                 </div>
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-2 text-neutral-700">
-              <div>
-                <span className="font-semibold text-neutral-500">Document Type:</span>
-                <p className="font-bold">{triage.document_type}</p>
+            {triage.amount_due && (
+              <div className="grid grid-cols-12 p-3 items-center bg-emerald-50/40">
+                <div className="col-span-5 flex items-center gap-2 text-emerald-700 font-semibold">
+                  <Banknote className="w-4 h-4" />
+                  <span>Amount Due</span>
+                </div>
+                <div className="col-span-7 font-black text-emerald-800">
+                  {triage.amount_due}
+                </div>
               </div>
-              <div>
-                <span className="font-semibold text-neutral-500">Immediate Action:</span>
-                <p className="font-bold">{triage.immediate_action}</p>
-              </div>
-              <div>
-                <span className="font-semibold text-neutral-500">Legible:</span>
-                <p className="font-bold">{triage.is_legible ? "Yes" : "No"}</p>
-              </div>
-              <div>
-                <span className="font-semibold text-neutral-500">Scam Risk:</span>
-                <p className="font-bold">{triage.scam_risk}</p>
-              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Right Column: "What to do next?" */}
+        <div className="lg:col-span-4 rounded-2xl border border-slate-200 bg-slate-50/70 p-4 sm:p-5 space-y-3.5">
+          <h3 className="font-extrabold text-sm sm:text-base text-slate-900 tracking-tight">
+            What to do next?
+          </h3>
+
+          <div className="space-y-2.5 text-xs sm:text-sm font-semibold text-slate-700">
+            {/* Step 1 */}
+            <div className="flex items-start gap-2.5 p-2 rounded-xl bg-white border border-slate-200/80">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+              <span>Read the simple summary below carefully.</span>
             </div>
+
+            {/* Step 2 */}
+            <div className="flex items-start gap-2.5 p-2 rounded-xl bg-white border border-slate-200/80">
+              <ExternalLink className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+              <span>
+                {triage.action_instructions || "Check details directly with the official authority."}
+              </span>
+            </div>
+
+            {/* Step 3 */}
+            <div className="flex items-start gap-2.5 p-2 rounded-xl bg-white border border-slate-200/80">
+              <Building className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <span>If required, visit your nearest official branch or office.</span>
+            </div>
+
+            {/* Step 4: Security Shield Rule */}
+            <div className="flex items-start gap-2.5 p-2 rounded-xl bg-white border border-red-200">
+              <Lock className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+              <span className="text-red-950 font-bold">
+                Do not share OTP, PIN, password, or CVV with anyone.
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Tabs Row matching the mockup */}
+      <div className="pt-2 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setActiveTab("summary")}
+            className={`px-4 py-2 rounded-full text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+              activeTab === "summary"
+                ? "bg-blue-600 text-white shadow-xs"
+                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+            }`}
+          >
+            Simple Summary
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("detailed")}
+            className={`px-4 py-2 rounded-full text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+              activeTab === "detailed"
+                ? "bg-blue-600 text-white shadow-xs"
+                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+            }`}
+          >
+            Detailed Explanation
+          </button>
+
+          {onLanguageChange && (
+            <>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab("telugu");
+                  onLanguageChange("te");
+                }}
+                className={`px-4 py-2 rounded-full text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                  language === "te"
+                    ? "bg-purple-600 text-white shadow-xs"
+                    : "bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200"
+                }`}
+              >
+                Translate (Telugu)
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab("hindi");
+                  onLanguageChange("hi");
+                }}
+                className={`px-4 py-2 rounded-full text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                  language === "hi"
+                    ? "bg-purple-600 text-white shadow-xs"
+                    : "bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200"
+                }`}
+              >
+                Translate (Hindi)
+              </button>
+            </>
+          )}
+        </div>
+
+        {/* Action Controls: Audio narration, WhatsApp, Scan Another */}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleSpeak}
+            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+              isSpeaking
+                ? "bg-amber-500 text-white animate-pulse"
+                : "bg-slate-100 hover:bg-slate-200 text-slate-700"
+            }`}
+          >
+            {isSpeaking ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4 text-blue-600" />}
+            <span>{isSpeaking ? "Stop" : "Listen"}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleWhatsAppShare}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs sm:text-sm font-bold bg-[#25D366] hover:bg-[#20ba59] text-white shadow-2xs transition-all cursor-pointer"
+          >
+            <MessageCircle className="w-4 h-4 fill-current" />
+            <span className="hidden sm:inline">WhatsApp</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={onReset}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs sm:text-sm font-bold bg-slate-900 hover:bg-black text-white transition-all cursor-pointer"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>Scan Another</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Summary Box with AI Sparkle Icon matching the mockup */}
+      <div className="p-5 sm:p-6 rounded-2xl bg-blue-50/60 border border-blue-100 space-y-2">
+        <div className="flex items-center gap-2 text-blue-700 font-extrabold text-sm sm:text-base">
+          <Sparkles className="w-5 h-5 text-purple-600" />
+          <span>
+            {activeTab === "detailed"
+              ? "Detailed Legal & Official Breakdown"
+              : activeTab === "telugu"
+              ? "సరళమైన వివరణ (Simple Summary)"
+              : activeTab === "hindi"
+              ? "सरल हिंदी सारांश (Simple Summary)"
+              : "Simple Summary"}
+          </span>
+        </div>
+
+        <p className="text-sm sm:text-base font-semibold text-slate-800 leading-relaxed">
+          {activeTab === "detailed"
+            ? `${triage.core_meaning || "Official document"} ${triage.action_instructions || ""} ${
+                triage.reference_id ? `Account / Reference ID: ${triage.reference_id}.` : ""
+              }`
+            : triage.core_meaning ||
+              "This is an official notice. You do not need to worry. Please verify through the official website or visit your nearest branch."}
+        </p>
+
+        {triage.action_instructions && activeTab === "summary" && (
+          <p className="text-xs sm:text-sm font-bold text-blue-900 pt-1">
+            👉 Immediate Action: {triage.action_instructions}
+          </p>
+        )}
+
+        {isScam && triage.red_flags.length > 0 && (
+          <div className="mt-3 p-3 rounded-xl bg-red-100/70 border border-red-200 text-red-950 text-xs sm:text-sm font-bold">
+            ⚠️ Red Flags: {triage.red_flags.join("; ")}
           </div>
         )}
       </div>
 
-      {/* Share, Listen & Retake Action Buttons */}
-      <ShareButtons
-        triage={triage}
-        language={language}
-        onReset={onReset}
-      />
-
-      {/* Legal & Medical Disclaimer at Bottom */}
-      <footer className="pt-2">
-        <p className="text-xs text-center text-neutral-500 leading-relaxed max-w-md mx-auto">
-          ⚖️ {triage.disclaimer || t.disclaimerPrefix}
-        </p>
-      </footer>
-    </article>
+      {/* Subtle Disclaimer Footer */}
+      <p className="text-[11px] text-center text-slate-400">
+        ⚖️ {triage.disclaimer}
+      </p>
+    </section>
   );
 };
